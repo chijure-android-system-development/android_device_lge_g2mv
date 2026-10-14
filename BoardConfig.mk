@@ -21,8 +21,10 @@ BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 \
     --ramdisk_offset 0x01000000 \
     --tags_offset 0x00000100
 
-BOARD_BOOTIMAGE_PARTITION_SIZE := 16777216
-BOARD_RECOVERYIMAGE_PARTITION_SIZE := 16777216
+# LNX and SOS are 12 MiB in the kernel GPT (24576 sectors). nvflash reports
+# 16 MiB for SOS, but the extra 4 MiB belong to the following DTB partition.
+BOARD_BOOTIMAGE_PARTITION_SIZE := 12582912
+BOARD_RECOVERYIMAGE_PARTITION_SIZE := 12582912
 BOARD_FLASH_BLOCK_SIZE := 4096
 
 TARGET_USERIMAGES_USE_EXT4 := true
@@ -34,11 +36,18 @@ DEVICE_RESOLUTION := 540x960
 BOARD_USE_SKIA_LCDTEXT := true
 RECOVERY_GRAPHICS_FORCE_USE_LINELENGTH := true
 RECOVERY_GRAPHICS_FORCE_SINGLE_BUFFER := true
+TW_NO_SCREEN_BLANK := true
+
+# The only key combo (Vol- + Power, USB unplugged) goes through LG's factory
+# reset screen, which writes "recovery\n--wipe_data" to MSC. Open TWRP instead
+# of wiping /data.
+TW_IGNORE_MISC_WIPE_DATA := true
 
 # 1080x1920 has the same 9:16 aspect ratio as the D625 framebuffer (540x960),
 # avoiding the non-uniform 480x800 -> 540x960 scaling of portrait_mdpi.
 TW_THEME := portrait_hdpi
 TW_BUILD_AUTHOR := chijure
+TW_DEVICE_VERSION := 1
 TW_BRIGHTNESS_PATH := /sys/devices/platform/pwm-backlight/backlight/pwm-backlight/brightness
 TW_MAX_BRIGHTNESS := 255
 TW_INTERNAL_STORAGE_PATH := /data/media

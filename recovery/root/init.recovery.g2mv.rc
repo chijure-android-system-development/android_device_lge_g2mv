@@ -1,0 +1,11 @@
+# LG D625 / g2mv recovery init.
+#
+# Without USB, nothing in recovery requests memory bandwidth and EMC drops to
+# 25.5 MHz. tegradc then cannot fetch the 540x960x32bpp framebuffer fast
+# enough and short white horizontal lines appear. While USB is connected the
+# UDC holds EMC at 102 MHz or more, which hides the problem. Keep that floor.
+
+on boot
+    mount debugfs debugfs /sys/kernel/debug
+    write /sys/kernel/debug/clock/floor.emc/rate 102000000
+    write /sys/kernel/debug/clock/floor.emc/state 1

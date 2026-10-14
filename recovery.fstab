@@ -3,8 +3,21 @@
 /boot      emmc  /dev/block/platform/sdhci-tegra.3/by-name/LNX
 /system    ext4  /dev/block/platform/sdhci-tegra.3/by-name/APP
 /cache     ext4  /dev/block/platform/sdhci-tegra.3/by-name/CAC
-/data      ext4  /dev/block/platform/sdhci-tegra.3/by-name/UDA  flags=length=-16384
+# The stock fstab keeps the crypto footer in MDA, not at the end of UDA.
+/data      ext4  /dev/block/platform/sdhci-tegra.3/by-name/UDA  flags=encryptable=/dev/block/platform/sdhci-tegra.3/by-name/MDA
 /misc      emmc  /dev/block/platform/sdhci-tegra.3/by-name/MSC
 /staging   emmc  /dev/block/platform/sdhci-tegra.3/by-name/USP
 /encrypt   emmc  /dev/block/platform/sdhci-tegra.3/by-name/MDA
+
+# Device-specific LG/Icera partitions. They are backed up as raw images so a
+# ROM change cannot silently lose modem, calibration or carrier data.
+/modem     emmc  /dev/block/platform/sdhci-tegra.3/by-name/MDM  flags=backup=1;display="Modem (MDM)"
+/cust      emmc  /dev/block/platform/sdhci-tegra.3/by-name/CST  flags=backup=1;display="Cust (CST)"
+/mpt       emmc  /dev/block/platform/sdhci-tegra.3/by-name/MPT  flags=backup=1;display="LG MPT"
+/pst       emmc  /dev/block/platform/sdhci-tegra.3/by-name/PST  flags=backup=1;display="LG PST"
+/sns       emmc  /dev/block/platform/sdhci-tegra.3/by-name/SNS  flags=backup=1;display="LG SNS"
+/rct       emmc  /dev/block/platform/sdhci-tegra.3/by-name/RCT  flags=backup=1;display="LG RCT"
+/drm       emmc  /dev/block/platform/sdhci-tegra.3/by-name/DRM  flags=backup=1;display="LG DRM"
+/sep       emmc  /dev/block/platform/sdhci-tegra.3/by-name/SEP  flags=backup=1;display="LG SEP"
+
 /external_sd auto /dev/block/platform/sdhci-tegra.2/by-num/p1 flags=display="Micro SDcard";storage;wipeingui;removable

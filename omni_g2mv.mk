@@ -8,4 +8,5 @@ PRODUCT_MODEL := LG-D625
 PRODUCT_MANUFACTURER := LGE
 
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/recovery.fstab:recovery/root/etc/recovery.fstab
+    $(LOCAL_PATH)/recovery.fstab:recovery/root/etc/recovery.fstab \
+    $(LOCAL_PATH)/recovery/root/init.recovery.g2mv.rc:root/init.recovery.g2mv.rc
