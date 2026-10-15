@@ -4,6 +4,13 @@ DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
 
 $(call inherit-product-if-exists, vendor/lge/g2mv/g2mv-vendor.mk)
 
+# Stock audio_policy.tegra.so is ABI-incompatible with CM 11 and SIGSEGVs
+# mediaserver in getStreamVolumeIndex() (kills Camera). It is not listed in
+# proprietary-files.txt, but a leftover under out/.../system/lib/hw survives
+# incremental bacon and gets repackaged — delete it whenever the out tree exists.
+$(shell rm -f $(TARGET_OUT)/lib/hw/audio_policy.tegra.so \
+    vendor/lge/g2mv/proprietary/system/lib/hw/audio_policy.tegra.so)
+
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio_policy.conf:system/etc/audio_policy.conf \
     $(LOCAL_PATH)/configs/nvcamera.conf:system/etc/nvcamera.conf \

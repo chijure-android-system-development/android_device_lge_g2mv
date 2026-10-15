@@ -36,10 +36,13 @@ launcher on real LG-D625 hardware. The validated bring-up configuration uses:
 
 The stock `audio_policy.tegra.so` must not be installed. It was built against
 LG's Android 4.4.2 media ABI and crashes in
-`AudioPolicyManagerBase::getStreamVolumeIndex()`, killing `mediaserver` and
-eventually `system_server`. The CM policy module avoids that ABI mismatch. The
-stock NVIDIA primary audio HAL then opens successfully as output 2 at 48 kHz,
-and speaker routing works.
+`AudioPolicyManagerBase::getStreamVolumeIndex()`, killing `mediaserver` (Camera
+reports "Media server died"). Use only CM `audio_policy.default`. `device.mk`
+deletes stale `audio_policy.tegra.so` from `out/` and the vendor proprietary
+tree on each build so incremental bacon cannot repackage it. On a live device,
+rename it to `audio_policy.tegra.so.disabled` under `/system/lib/hw/`. The stock
+NVIDIA primary audio HAL then opens successfully as output 2 at 48 kHz, and
+speaker routing works.
 
 ### CM 11 bring-up status
 
