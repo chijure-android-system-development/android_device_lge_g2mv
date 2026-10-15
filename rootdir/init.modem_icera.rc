@@ -1,0 +1,111 @@
+# Copyright (c) 2012-2013 NVIDIA Corporation.  All Rights Reserved.
+#
+# NVIDIA Corporation and its licensors retain all intellectual property and
+# proprietary rights in and to this software and related documentation.  Any
+# use, reproduction, disclosure or distribution of this software and related
+# documentation without an express license agreement from NVIDIA Corporation
+# is strictly prohibited.
+
+import init.icera_${ro.hardware}.rc
+
+on init
+
+# Export the global environment for code coverage
+    export GCOV_PREFIX /data
+    export GCOV_PREFIX_STRIP 3
+
+# rild properties
+    stop ril-daemon
+    chown radio radio /dev/ttyGS0
+    chown radio radio /dev/ttyGS1
+# mount point for fs_mgr to mount modem partition
+    mkdir /mnt/modem
+
+on post-fs
+    mkdir /mnt/modem/data 0770 root radio
+    mkdir /mnt/modem/data/factory 0770 root radio
+    mkdir /mnt/modem/data/persistent 0770 root radio
+    mkdir /mnt/modem/data/modem 0770 root radio
+
+on post-fs-data
+    mkdir /data/rfs
+    mkdir /data/rfs/ril 0770 root radio
+
+on boot
+    write /proc/sys/net/core/rmem_default 2097152
+    write /proc/sys/net/core/rmem_max 2097152
+
+# Start FIL daemon
+service fil-daemon /system/bin/fild
+    class main
+    user radio
+    group log radio
+
+# Start AGPS daemon
+service agps-daemon /system/bin/agpsd
+    disabled
+    user radio
+    socket at_pal seqpacket 0666 radio system
+    group system
+
+# crashlogs service
+service icera-crashlogs /system/bin/icera-crashlogs
+    user root
+    group root
+    disabled
+    oneshot
+
+# AT port forwarding service
+service at-port-forward /system/bin/at-port-forward
+    user radio
+    group radio
+    disabled
+
+# Modem logging port forwarding service
+service log-port-forward /system/bin/log-port-forward
+    user radio
+    group radio
+    disabled
+
+# Mock modem service
+service mock_modem /system/bin/mock_modem
+    class main
+    user root
+    group root
+    disabled
+
+on property:gsm.modem.crashlogs=1
+    start icera-crashlogs
+
+on property:gsm.modem.logging=1
+    start icera-crashlogs
+
+on property:gsm.modem.ril.enabled=0
+    stop ril-daemon
+	stop agps-daemon
+
+on property:gsm.modem.ril.enabled=1
+    stop ril-daemon
+    start ril-daemon
+	stop agps-daemon
+	start agps-daemon
+
+on property:gsm.modem.fild.mode=ift
+    stop fil-daemon
+    start fil-daemon
+
+on property:gsm.modem.fild.mode=mdm
+    stop fil-daemon
+    start fil-daemon
+
+on property:gsm.modem.icera.testmode=1
+    setprop gsm.modem.icera.atd "stop"
+    stop fil-daemon
+    start fil-daemon
+    start at-port-forward
+    start log-port-forward
+
+on property:gsm.modem.icera.testmode=0
+    stop at-port-forward
+    stop log-port-forward
+    setprop gsm.modem.icera.atd "start"

@@ -1,4 +1,77 @@
-# TWRP device tree - LG D625 (g2mv)
+# LG D625 (g2mv) device tree
+
+This tree supports the tested TWRP target and contains an experimental
+CyanogenMod 11 bring-up target named `cm_g2mv`. The CM target builds the
+LG/NVIDIA D625 kernel from `kernel/lge/d625` and uses proprietary files
+extracted from stock D62510c.
+
+To extract the proprietary files from a connected, booted stock ROM:
+
+```bash
+device/lge/g2mv/extract-files.sh
+```
+
+Then configure the CM build with:
+
+```bash
+source build/envsetup.sh
+lunch cm_g2mv-userdebug
+make -j$(nproc) bacon
+```
+
+The CM port is initial bring-up work and must be tested through a temporary
+boot/recovery workflow before any permanent installation. Back up every
+LG/Icera partition listed below first.
+
+## CyanogenMod 11 first boot (2026-10-14)
+
+The `cm_g2mv-userdebug` target completed its first successful boot to the CM 11
+launcher on real LG-D625 hardware. The validated bring-up configuration uses:
+
+- the CM 11 Android 4.4.4 userspace built from this tree;
+- the stock `3.4.65-g2ebb907` kernel combined with the CM 11 ramdisk;
+- proprietary files extracted from the D62510c stock-system backup;
+- CM's `audio_policy.default` with `configs/audio_policy.conf`; and
+- `qemu.hw.mainkeys=0` for the on-screen navigation bar.
+
+The stock `audio_policy.tegra.so` must not be installed. It was built against
+LG's Android 4.4.2 media ABI and crashes in
+`AudioPolicyManagerBase::getStreamVolumeIndex()`, killing `mediaserver` and
+eventually `system_server`. The CM policy module avoids that ABI mismatch. The
+stock NVIDIA primary audio HAL then opens successfully as output 2 at 48 kHz,
+and speaker routing works.
+
+### CM 11 bring-up status
+
+| Component | Status | Notes |
+|---|---|---|
+| Boot to launcher | Works | `sys.boot_completed=1` |
+| Display and EGL | Works with stock kernel | The source-built kernel currently produces a physically black panel |
+| Touch and on-screen navigation | Works | Navigation bar forced with `qemu.hw.mainkeys=0` |
+| ADB | Works | Available during boot and from TWRP |
+| Primary audio and speaker routing | Works, experimental | Uses CM policy plus the stock NVIDIA primary HAL |
+| Wi-Fi | Disabled for safety | See the kernel/module warning below |
+| Cellular, calls, camera, Bluetooth, GPS, suspend | Not validated | Further hardware testing required |
+
+### Temporary stock-kernel limitation
+
+Do not load the packaged `bcmdhd.ko` while using the temporary stock kernel.
+The module and kernel revisions do not match. Repeated framework restarts
+caused Wi-Fi to unload/reload the module, corrupt the kernel timer lists and
+panic in `kernel/timer.c:1089` (`cascade`, fatal exception in interrupt).
+
+For this bring-up stage, `BoardConfig.mk` does not expose a loadable Wi-Fi
+module to the framework and `rootdir/init.grey.rc` does not `insmod` it. Restore
+those settings only after `boot.img` and `bcmdhd.ko` are built from the same
+kernel revision. The long-term fix is to make the source-built D625 kernel
+initialize the panel correctly and use that kernel together with its modules.
+
+### Confirmed remaining issue
+
+`mediaserver` can still restart occasionally with `heap corruption detected by
+dlfree` while decoding/tearing down boot or UI sounds. Unlike the original
+audio-policy crash, this has not killed `system_server`, but the NVIDIA media
+blob compatibility still needs investigation.
 
 **Device**: LG G2 Mini LTE / LG-D625  
 **Codename**: g2mv  

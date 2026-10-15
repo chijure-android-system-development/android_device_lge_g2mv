@@ -1,0 +1,310 @@
+service lge-usb-sh /system/bin/sh /init.lge.usb.sh
+    class core
+    user root
+    oneshot
+
+on init
+    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+    write /sys/class/android_usb/android0/f_ecm/manufacturer LG
+    write /sys/class/android_usb/android0/f_ecm/vendorID 1004
+
+on post-fs-data
+    chown system system /sys/class/android_usb/android0/f_cdrom_storage/lun/cdrom_usbmode
+    chmod 0660 /sys/class/android_usb/android0/f_cdrom_storage/lun/cdrom_usbmode
+
+on boot
+    write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
+    write /sys/class/android_usb/android0/iProduct ${ro.product.model}
+
+on property:sys.usb.config=mtp
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 61F1
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions acm,serial,mtp
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=mtp,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 61F1
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions acm,serial,mtp,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=cdrom_storage
+    stop adbd
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 632C
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions cdrom_storage
+    write /sys/class/android_usb/android0/f_cdrom_storage/lun/file /system/usbautorun.iso
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=cdrom_storage,adb
+    stop adbd
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 632C
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions cdrom_storage
+    write /sys/class/android_usb/android0/f_cdrom_storage/lun/file /system/usbautorun.iso
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=charge_only
+    stop adbd
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 6300
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions charge_only
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=charge_only,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 631F
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions charge_only,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 631F
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=rndis
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0955
+    write /sys/class/android_usb/android0/idProduct 7103
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/class/android_usb/android0/bDeviceClass 224
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=rndis,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0955
+    write /sys/class/android_usb/android0/idProduct 7103
+    write /sys/class/android_usb/android0/functions ${sys.usb.config}
+    write /sys/class/android_usb/android0/bDeviceClass 224
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=ptp
+    stop adbd
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 631E
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions ptp
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=ptp,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 631D
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions ptp,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=pc_suite
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 61F1
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions acm,serial,mtp
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=pc_suite,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 61F1
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions acm,serial,mtp,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=ecm
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 633B
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions ecm
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=ecm,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 6312
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions ecm,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=mtp_only
+    stop adbd
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 631C
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions mtp
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=mtp_only,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 61F9
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions mtp,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=ptp_only
+    stop adbd
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 631E
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions ptp
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=ptp_only,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 631D
+    write /sys/class/android_usb/android0/bDeviceClass 0
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions ptp,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+# it can run as factory cable(56K/130K/910K USB cable)
+on property:sys.usb.config=factory
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 6000
+    write /sys/class/android_usb/android0/bDeviceClass 2
+    write /sys/class/android_usb/android0/bDeviceSubClass 0
+    write /sys/class/android_usb/android0/bDeviceProtocol 0
+    write /sys/class/android_usb/android0/functions acm,serial
+    write /sys/class/android_usb/android0/enable 1
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=beanie
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 61FE
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions acm,serial,ecm,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 1
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=beanie,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 61FE
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions acm,serial,ecm,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 1
+    setprop sys.usb.state ${sys.usb.config}
+
+on property:sys.usb.config=factory,adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 1004
+    write /sys/class/android_usb/android0/idProduct 633A
+    write /sys/class/android_usb/android0/bDeviceClass 239
+    write /sys/class/android_usb/android0/bDeviceSubClass 2
+    write /sys/class/android_usb/android0/bDeviceProtocol 1
+    write /sys/class/android_usb/android0/functions acm,serial,adb
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop gsm.modem.icera.testmode 0
+    setprop sys.usb.state ${sys.usb.config}

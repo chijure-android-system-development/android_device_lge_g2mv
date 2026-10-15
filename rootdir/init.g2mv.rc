@@ -1,0 +1,127 @@
+import init.grey.rc
+import init.g2mv_product.rc
+
+on fs
+    mount_all /fstab.g2mv
+    # LGE_UPDATE_START
+    # Executing tune2fs to reserve some region in /data. (40MB)
+    # 2013-02-05 G2-FS@lge.com
+    exec /system/bin/tune2fs -u system -r 10240 /dev/block/platform/sdhci-tegra.3/by-name/UDA
+    # LGE_UPDATE_END
+
+    # LGE_UPDATE_START, 2013/02/05, G2-FS@lge.com
+    # create mount point for LG Specific functions
+    mkdir /sns 0755 system system
+    mkdir /persist-lg 0755 system system
+    mkdir /mpt 0755 system system
+
+    wait /dev/block/platform/sdhci-tegra.3/by-name/PST
+    exec /system/bin/e2fsck -p /dev/block/platform/sdhci-tegra.3/by-name/PST
+    mount ext4 /dev/block/platform/sdhci-tegra.3/by-name/PST /persist nosuid nodev barrier=1 data=ordered nodelalloc
+	restorecon /persist
+
+    wait /dev/block/platform/sdhci-tegra.3/by-name/SNS
+    exec /system/bin/e2fsck -p /dev/block/platform/sdhci-tegra.3/by-name/SNS
+    mount ext4 /dev/block/platform/sdhci-tegra.3/by-name/SNS /sns nosuid nodev barrier=1 noatime noauto_da_alloc errors=continue
+	restorecon /sns
+
+    wait /dev/block/platform/sdhci-tegra.3/by-name/DRM
+    exec /system/bin/e2fsck -p /dev/block/platform/sdhci-tegra.3/by-name/DRM
+    mount ext4 /dev/block/platform/sdhci-tegra.3/by-name/DRM /persist-lg nosuid nodev barrier=1 noatime noauto_da_alloc errors=continue
+	restorecon /persist-lg
+
+    wait /dev/block/platform/sdhci-tegra.3/by-name/MPT
+    exec /system/bin/e2fsck -p /dev/block/platform/sdhci-tegra.3/by-name/MPT
+    mount ext4 /dev/block/platform/sdhci-tegra.3/by-name/MPT /mpt nodev nosuid barrier=1 noatime noauto_da_alloc errors=continue
+	restorecon /mpt
+
+	wait /dev/block/platform/sdhci-tegra.3/by-name/CST
+	exec /system/bin/e2fsck -p /dev/block/platform/sdhci-tegra.3/by-name/CST
+	mount ext4 /dev/block/platform/sdhci-tegra.3/by-name/CST /cust ro nodev barrier=1 noauto_da_alloc
+	restorecon /cust
+
+    mkdir /data/nfc
+    mkdir /data/nfc/param
+    chmod 0700 /data/nfc
+    chmod 0700 /data/nfc/param
+    chown nfc nfc /data/nfc
+    chown nfc nfc /data/nfc/param
+
+    # LGE_UPDATE_END
+# LGE_CHANGE_S for MLT
+# mpt partition permission change after mount
+on post-fs-data
+    chown system system /mpt
+    chmod 0775 /mpt
+# LGE_CHANGE_E for MLT
+# add folder to store calibration offset for motion sensor
+	chown system system /sns
+	chmod 0755 /sns
+	mkdir /sns/bmc_cal 0755 system system
+	chown system system /sns/bmc_cal/offset_x.dat
+	chown system system /sns/bmc_cal/offset_y.dat
+	chown system system /sns/bmc_cal/offset_z.dat
+
+	chown system system /cust
+	chmod 0775 /cust
+
+# LGE_CHANGE_S, For Camera Calibration Data, 2014-03-21, sunkyoo.hwang@lge.com
+on post-fs-data
+    chown media audio /data/nvcam
+    chown media audio /data/calibration.bin
+    chown media audio /data/nvcam/EEPROMdump-focus.txt
+    chown media audio /data/nvcam/EEPROMdump.txt
+    chown media audio /data/nvcam/calibrate-runtime-cfg.txt
+    chown media audio /data/nvcam/calibrate_params_LG.cfg
+    chown media audio /data/nvcam/factory_EEPROM_LG_0.bin
+    chown media audio /data/nvcam/factory_EEPROM_TRANS_0.bin
+    chown media audio /data/nvcam/nvcam_cache_0.bin
+    chown media audio /data/nvcam/nvcam_cache_LG_0.bin
+    chown media audio /data/nvcam/samples_c.txt
+    chown media audio /data/nvcam/serial_no_0.bin
+# LGE_CHANGE_E, For Camera Calibration Data, 2014-03-21, sunkyoo.hwang@lge.com
+
+# LGE_CHANGE_S for SRA
+# matia.kim@lge.com 2013.04.10 execute sreadahead daemon to reduce boot-time
+on post-fs
+    start sreadahead
+
+service sreadahead /sbin/treadahead
+    oneshot
+    disabled
+
+# matia.kim@lge.com 2013.04.03 make a decision whether sreadahead would be performed or not
+service sreadahead-check /sbin/sreadahead_check
+    class main
+    user root
+    group root
+    oneshot
+# LGE_CHANGE_E for SRA
+
+# LGBACKUP SystemService Daemon
+service bnrd /system/bin/bnrd
+    class main
+    socket bnrd stream 660 root system
+    user root
+    group system radio sdcard_rw
+
+    # LGE_CHANGE_S : added daemon for read calibration data from eeprom
+    # Camera Sensor EEPROM Data
+    service rdlsc /system/xbin/rdlsc
+       user root
+       group root
+       oneshot
+    on boot
+       start rdlsc
+# LGE_CHANGE_E : added daemon for read calibration data from eeprom
+
+#enable RCT(Root Check Tool)
+service rctd /system/bin/rctd
+    class late_start
+    user root
+    group root
+# Define call duration feature
+    on property:ro.lge.callduration=1
+    mkdir /persist-lg/callduration 0770 system radio
+    chown system radio /persist-lg/callduration
+    chmod 0770 /persist-lg/callduration

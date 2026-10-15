@@ -1,23 +1,25 @@
 # LG D625 / g2mv, extracted from the stock recovery ramdisk.
-/recovery  emmc  /dev/block/platform/sdhci-tegra.3/by-name/SOS
-/boot      emmc  /dev/block/platform/sdhci-tegra.3/by-name/LNX
-/system    ext4  /dev/block/platform/sdhci-tegra.3/by-name/APP
-/cache     ext4  /dev/block/platform/sdhci-tegra.3/by-name/CAC
+# CM11 recovery and its OTA tools require Android fstab v2:
+# <device> <mount point> <fs type> <mount flags> <fs_mgr flags>
+/dev/block/platform/sdhci-tegra.3/by-name/SOS  /recovery  emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/LNX  /boot      emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/APP  /system    ext4  rw        wait
+/dev/block/platform/sdhci-tegra.3/by-name/CAC  /cache     ext4  rw        wait
 # The stock fstab keeps the crypto footer in MDA, not at the end of UDA.
-/data      ext4  /dev/block/platform/sdhci-tegra.3/by-name/UDA  flags=encryptable=/dev/block/platform/sdhci-tegra.3/by-name/MDA
-/misc      emmc  /dev/block/platform/sdhci-tegra.3/by-name/MSC
-/staging   emmc  /dev/block/platform/sdhci-tegra.3/by-name/USP
-/encrypt   emmc  /dev/block/platform/sdhci-tegra.3/by-name/MDA
+/dev/block/platform/sdhci-tegra.3/by-name/UDA  /data      ext4  rw        wait,encryptable=/dev/block/platform/sdhci-tegra.3/by-name/MDA
+/dev/block/platform/sdhci-tegra.3/by-name/MSC  /misc      emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/USP  /staging   emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/MDA  /encrypt   emmc  defaults  defaults
 
 # Device-specific LG/Icera partitions. They are backed up as raw images so a
 # ROM change cannot silently lose modem, calibration or carrier data.
-/modem     emmc  /dev/block/platform/sdhci-tegra.3/by-name/MDM  flags=backup=1;display="Modem (MDM)"
-/cust      emmc  /dev/block/platform/sdhci-tegra.3/by-name/CST  flags=backup=1;display="Cust (CST)"
-/mpt       emmc  /dev/block/platform/sdhci-tegra.3/by-name/MPT  flags=backup=1;display="LG MPT"
-/pst       emmc  /dev/block/platform/sdhci-tegra.3/by-name/PST  flags=backup=1;display="LG PST"
-/sns       emmc  /dev/block/platform/sdhci-tegra.3/by-name/SNS  flags=backup=1;display="LG SNS"
-/rct       emmc  /dev/block/platform/sdhci-tegra.3/by-name/RCT  flags=backup=1;display="LG RCT"
-/drm       emmc  /dev/block/platform/sdhci-tegra.3/by-name/DRM  flags=backup=1;display="LG DRM"
-/sep       emmc  /dev/block/platform/sdhci-tegra.3/by-name/SEP  flags=backup=1;display="LG SEP"
+/dev/block/platform/sdhci-tegra.3/by-name/MDM  /modem  emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/CST  /cust   emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/MPT  /mpt    emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/PST  /pst    emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/SNS  /sns    emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/RCT  /rct    emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/DRM  /drm    emmc  defaults  defaults
+/dev/block/platform/sdhci-tegra.3/by-name/SEP  /sep    emmc  defaults  defaults
 
-/external_sd auto /dev/block/platform/sdhci-tegra.2/by-num/p1 flags=display="Micro SDcard";storage;wipeingui;removable
+/dev/block/platform/sdhci-tegra.2/by-num/p1  /external_sd  auto  defaults  voldmanaged=sdcard1:auto

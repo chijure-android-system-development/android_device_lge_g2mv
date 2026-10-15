@@ -1,0 +1,7 @@
+## Be careful to use "exec" command.
+## If you execute a non-existing file, an additional init process can be created!
+
+# Bluetooth tethering
+    setprop bluetooth.pan true
+    setprop persist.service.bt.support.sap false
+    setprop service.bt.support.busytone true

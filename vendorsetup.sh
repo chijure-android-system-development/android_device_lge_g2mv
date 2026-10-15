@@ -1,1 +1,2 @@
 add_lunch_combo omni_g2mv-eng
+add_lunch_combo cm_g2mv-userdebug
