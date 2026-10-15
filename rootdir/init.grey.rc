@@ -348,11 +348,11 @@ on boot
     #Set default sdcard fs type
     setprop vold.sdcard_fs_type none
 
-# [S][POWER][20140103][donghyuk79.park@lge.com] add chargerlogo
+# Offline charge: bootloader sets androidboot.mode=chargerlogo. init queues
+# this trigger before early-boot/boot; exec blocks until Power starts Android.
 on chargerlogo
-   stop bootlogo
+   write /sys/class/leds/lcd-backlight/brightness 180
    exec /sbin/chargerlogo
-# [E][POWER][20140103][donghyuk79.park@lge.com] add chargerlogo
 
 service auditd /system/bin/auditd -k
 	class main
@@ -449,9 +449,8 @@ service fuse_USBstorage1 /system/bin/sdcard -u 1023 -g 1023 -w 1023 -d /mnt/medi
     class late_start
     disabled
 
-# chager logo for native
-service charger /charger
-    class charger
+# AOSP offline charge uses healthd-charger from init.rc (class charger).
+# LG offline charge uses the chargerlogo trigger above, not this class.
 
 # bugreport is triggered by the VOLUME-DOWN and VOLUME-UP keys
 service bugreport /system/bin/dumpstate -d -v -o /data/storage/bugreports/bugreport

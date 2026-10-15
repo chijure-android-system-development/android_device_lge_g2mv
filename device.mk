@@ -11,6 +11,12 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/sensors.g2mv.so:system/lib/hw/sensors.g2mv.so
 
+# Stock LG offline-charge UI (ramdisk). Binary patched to drive RT8542
+# leds/lcd-backlight instead of pwm-backlight. Requires init chargerlogo
+# trigger (system/core patch in patches/init-chargerlogo.patch).
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilt/chargerlogo:root/sbin/chargerlogo
+
 $(call inherit-product-if-exists, vendor/lge/g2mv/g2mv-vendor.mk)
 
 # Stock audio_policy.tegra.so is ABI-incompatible with CM 11 and SIGSEGVs

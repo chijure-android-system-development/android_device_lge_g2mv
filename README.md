@@ -65,7 +65,27 @@ speaker routing works.
 | Bluetooth | Partial | Feature XML + `bt_vendor.conf`; on/scan OK |
 | GPS, suspend | Not validated | Further hardware testing required |
 | Proximity + ALS (APDS9930) | Works | Always bind `apds993x` (not 9130-only); patched `sensors.g2mv.so` |
+| Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
 | IR blaster (UEI MXQ616) | Not wired | See Infrared section below |
+
+### Offline charge (chargerlogo)
+
+With the phone powered off, the D625 bootloader boots the kernel with
+`androidboot.mode=chargerlogo`. Stock LG ships `/sbin/chargerlogo` in the
+ramdisk and a patched `init` that runs the `on chargerlogo` trigger (after
+mounting `/system` for `vendor/etc/chargerimages`) before `early-boot`/`boot`.
+
+CM's AOSP `init` only treated `mode=charger`, so the phone booted the full
+framework instead of the charge animation. This tree:
+
+- packages stock `prebuilt/chargerlogo` into the ramdisk (string-patched to
+  use `/sys/class/leds/lcd-backlight/brightness` for RT8542);
+- keeps `on chargerlogo` in `init.grey.rc`;
+- requires `patches/init-chargerlogo.patch` applied under `system/core`.
+
+```bash
+patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
+```
 
 ### Infrared (IR)
 
