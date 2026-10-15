@@ -339,12 +339,12 @@ on boot
     write /data/misc/wminput/connected 0
     chmod 0666 /data/misc/wminput/connected
 
-# GPS init
+# GPS init (BCM4752 nSTDBY on gpio63; glgps toggles value, needs gps/system write)
     write /sys/class/gpio/export 63
     write /sys/class/gpio/gpio63/value 0
     write /sys/class/gpio/gpio63/direction out
-    chown root system /sys/class/gpio/gpio63/value
-    chmod 0664 /sys/class/gpio/gpio63/value
+    chown gps system /sys/class/gpio/gpio63/value
+    chmod 0660 /sys/class/gpio/gpio63/value
 
 # USB On The Go - Host Mode
     chown system system /sys/devices/platform/tegra-otg/enable_host

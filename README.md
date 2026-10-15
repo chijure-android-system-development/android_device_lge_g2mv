@@ -66,7 +66,7 @@ speaker routing works.
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test |
 | Bluetooth | Partial | Feature XML + `bt_vendor.conf`; on/scan OK |
-| GPS | Not validated | Further hardware testing required |
+| GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE). Outdoor TTFF still to confirm (0 sats indoors) |
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated (`Entering suspend state LP0`; ~85 s sleep unplugged). USB ADB holds `vbus-tegra-otg` and blocks LP0 while plugged |
 | Proximity + ALS (APDS9930) | Works | Always bind `apds993x` (not 9130-only); patched `sensors.g2mv.so` |
 | Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
@@ -124,6 +124,27 @@ brands from **Otros** if present, or path B ConsumerIr later.
 
 No `android.hardware.consumerir` HAL yet (path B / G2-style `libcir_driver`
 still open). Qualcomm `g2m` SwIRRC is not applicable on Tegra.
+
+### GPS
+
+Broadcom **BCM4752** via UART `ttyHS1` @ 921600, userspace `glgps` + HAL
+`gps.tegra.so`, AGPS assist through Icera `agpsd` (`/dev/ttySHM3` / `at_pal`).
+
+Validated on CM11:
+
+- `init.svc.gps-daemon` / `agps-daemon` running; `gpsEnabled=true`
+- Session opens `/dev/ttyHS1` and drives nSTDBY `gpio63` high
+- Cell-ID aiding works (`AT%IECELLID`, MCC/MNC 716/10 Claro PE)
+- LTO file updates under `/data/gps/lto2.dat`
+
+Device-tree tweaks vs stock:
+
+- `ueventd`: `/dev/ttyHS1` owned `gps:system`
+- `init.grey.rc`: `gpio63/value` owned `gps:system` mode `0660` (glgps must write nSTDBY)
+- `configs/gps.conf` overlay: `NTP_SERVER=south-america.pool.ntp.org`
+
+Do **not** load `gps_drv.ko` (TI shared-transport driver; wrong stack).
+Outdoor TTFF / satellite lock still needs a sky-view check.
 
 ### Source kernel (CM11 backlight)
 

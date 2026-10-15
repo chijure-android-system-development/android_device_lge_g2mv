@@ -48,6 +48,7 @@ $(shell rm -f $(TARGET_OUT)/lib/hw/audio_policy.tegra.so \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio_policy.conf:system/etc/audio_policy.conf \
     $(LOCAL_PATH)/configs/nvcamera.conf:system/etc/nvcamera.conf \
+    $(LOCAL_PATH)/configs/gps.conf:system/etc/gps.conf \
     $(LOCAL_PATH)/rootdir/fstab.g2mv:root/fstab.g2mv \
     $(LOCAL_PATH)/rootdir/init.g2mv.rc:root/init.g2mv.rc \
     $(LOCAL_PATH)/rootdir/init.g2mv_product.rc:root/init.g2mv_product.rc \
