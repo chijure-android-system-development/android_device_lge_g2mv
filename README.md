@@ -1,9 +1,9 @@
 # LG D625 (g2mv) device tree
 
-This tree supports the tested TWRP target and contains an experimental
-CyanogenMod 11 bring-up target named `cm_g2mv`. The CM target builds the
+This tree is the CyanogenMod 11 bring-up target `cm_g2mv`. It builds the
 LG/NVIDIA D625 kernel from `kernel/lge/d625` and uses proprietary files
-extracted from stock D62510c.
+extracted from stock D62510c. TWRP for this device lives in a separate
+tree (`twrp-4.4/device/lge/g2mv`), including the twrpTar fork patch.
 
 To extract the proprietary files from a connected, booted stock ROM:
 
@@ -341,41 +341,14 @@ up once before installing any ROM:
 | `/drm` | `DRM` | 8 MiB |
 | `/sep` | `SEP` | 2 MiB |
 
-## Build
-
-Place this repository at `device/lge/g2mv` in an Android 4.4 TWRP source tree:
+## Build (CM 11)
 
 ```bash
-device/lge/g2mv/apply-recovery-patches.sh
 source build/envsetup.sh
-lunch omni_g2mv-eng
-make -j$(nproc) recoveryimage
-device/lge/g2mv/revert-recovery-patches.sh
+lunch cm_g2mv-userdebug
+make -j$(nproc) bacon
 ```
 
-The local patch fixes a TWRP 3.1.1 deadlock in the tar child processes. Those
-children called GUI functions after `fork()`, which hung every `/system`
-backup when it was split into multiple archives. The patch removes every GUI
-call from the backup and restore children, including the error paths. The helper scripts apply it only for the build
-and restore `bootable/recovery` afterward, which keeps the upstream source tree
-clean. Always run the revert script after the build, including after a failed
-build.
-
-Output:
-
-```text
-out/target/product/g2mv/recovery.img
-```
-
-## Test without flashing
-
-Boot the image temporarily from the unlocked bootloader:
-
-```bash
-fastboot boot out/target/product/g2mv/recovery.img
-```
-
-This command does not install the recovery. Verify the display, touch, ADB and
-mounts before considering any permanent write. APX/nvflash is not required for
-this test.
+For TWRP recovery builds and the twrpTar fork patch, use the dedicated
+`twrp-4.4/device/lge/g2mv` tree instead of this CM 11 device tree.
 
