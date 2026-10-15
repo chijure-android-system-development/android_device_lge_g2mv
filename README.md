@@ -59,7 +59,7 @@ speaker routing works.
 | Camera | Works | Preview OK after `storage_list` overlay + `nvcamera.conf`; polish TBD |
 | Flash / Torch | Works | `RT8542-fled` + Torch overlay; sysfs `chmod 0666` |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
-| NFC | Partial | NfcNci + `nfc_nci.g2mv` / pn547; toggle on works |
+| NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test |
 | Bluetooth | Partial | Feature XML + `bt_vendor.conf`; on/scan OK |
 | GPS, suspend | Not validated | Further hardware testing required |
 | IR proximity (APDS9130) | Works | Normal `TYPE_PROXIMITY` sensor (screen-off in call) |

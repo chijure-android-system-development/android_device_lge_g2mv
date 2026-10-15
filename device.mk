@@ -2,6 +2,11 @@ LOCAL_PATH := device/lge/g2mv
 
 DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
 
+# Prefer device NFC config over the stock blob (FW path + standby). Must be
+# registered before g2mv-vendor.mk — PRODUCT_COPY_FILES keeps the first entry.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/libnfc-nxp.conf:system/etc/libnfc-nxp.conf
+
 $(call inherit-product-if-exists, vendor/lge/g2mv/g2mv-vendor.mk)
 
 # Stock audio_policy.tegra.so is ABI-incompatible with CM 11 and SIGSEGVs
