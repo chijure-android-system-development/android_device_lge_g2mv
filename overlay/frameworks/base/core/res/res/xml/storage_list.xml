@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     Storage layout for the LG G2 Mini LTE (g2mv).
+
+     /data/media is exposed as the primary, emulated storage by the sdcard
+     service.  The removable microSD is managed by vold as external_SD; its
+     mount point must match rootdir/fstab.g2mv exactly.
+-->
+<StorageList xmlns:android="http://schemas.android.com/apk/res/android">
+    <storage
+        android:mountPoint="/storage/sdcard0"
+        android:storageDescription="@string/storage_internal"
+        android:primary="true"
+        android:emulated="true"
+        android:mtpReserve="100" />
+
+    <storage
+        android:mountPoint="/storage/external_SD"
+        android:storageDescription="@string/storage_sd_card"
+        android:primary="false"
+        android:removable="true"
+        android:allowMassStorage="true"
+        android:maxFileSize="4096" />
+</StorageList>

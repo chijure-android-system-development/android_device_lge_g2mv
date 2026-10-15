@@ -51,7 +51,32 @@ and speaker routing works.
 | ADB | Works | Available during boot and from TWRP |
 | Primary audio and speaker routing | Works, experimental | Uses CM policy plus the stock NVIDIA primary HAL |
 | Wi-Fi | Disabled for safety | See the kernel/module warning below |
-| Cellular, calls, camera, Bluetooth, GPS, suspend | Not validated | Further hardware testing required |
+| Cellular / SIM | Broken | `gsm.sim.state=UNKNOWN`, Icera AT+CLCC spam |
+| Camera | Works | Preview OK after `storage_list` overlay + `nvcamera.conf`; polish TBD |
+| Flash / Torch | Works | `RT8542-fled` + Torch overlay; sysfs `chmod 0666` |
+| Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
+| NFC | Partial | NfcNci + `nfc_nci.g2mv` / pn547; toggle on works |
+| Bluetooth | Partial | Feature XML + `bt_vendor.conf`; on/scan OK |
+| GPS, suspend | Not validated | Further hardware testing required |
+| IR proximity (APDS9130) | Works | Normal `TYPE_PROXIMITY` sensor (screen-off in call) |
+| IR blaster (UEI MXQ616) | Not wired | See Infrared section below |
+
+### Infrared (IR)
+
+The D625 has **two** IR-related blocks; only the proximity sensor is usable in CM 11 today.
+
+| Hardware | Role | CM 11 status |
+|---|---|---|
+| APDS9130 | Proximity (IR LED) | Works as a standard sensor |
+| UEI MXQ616 (`uei_irrc`) | IR blaster / Quick Remote | Kernel only powers reset + LED LDO GPIOs; no ConsumerIr HAL |
+
+CM 11 already ships the Android `ConsumerIrManager` API and a stub `consumerir.default` HAL, but this tree does **not** declare `android.hardware.consumerir` or ship a device HAL. Stock Quick Remote / UEI blobs were not extracted into `proprietary-files.txt`.
+
+**Prior art (not drop-in for g2mv):**
+
+- G2 Mini **Qualcomm** (`g2m` / D620, msm8226): Quarx2k SwIRRC + `liblgir` for QuickRemote ([msm8226-common](https://github.com/LineageOS/android_device_lge_msm8226-common/commit/2d93079ec8093b03d49a91eb4dc4140ff3ea1742)); later LineageOS ConsumerIr HAL via audio/PWM ([g2m Enable IR HAL](https://review.lineageos.org/c/LineageOS/android_device_lge_g2m/+/205695)). That path uses `sw_irrc`, not Tegra UEI.
+- LG G2/G3/G4: `libcir_driver` + UART (`/dev/ttyHSL*`) ConsumerIr HAL — closest pattern to a UART UEI chip, still unported here.
+- No public ConsumerIr / Quick Remote bring-up was found for **g2mv / D625 (Tegra 4i)**.
 
 ### Temporary stock-kernel limitation
 

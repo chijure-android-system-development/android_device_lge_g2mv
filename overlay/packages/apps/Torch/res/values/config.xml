@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LG D625 uses the RT8542 flash LED, not leds/flashlight. -->
+<resources>
+    <bool name="useCameraInterface">false</bool>
+    <string name="flashDevice">/sys/class/leds/RT8542-fled/brightness</string>
+    <string name="flashDeviceLuminosity"></string>
+    <string name="flashDeviceLuminosity2"></string>
+    <integer name="valueOff">0</integer>
+    <integer name="valueOn">128</integer>
+    <integer name="valueLow">64</integer>
+    <integer name="valueHigh">128</integer>
+    <integer name="valueDeathRay">255</integer>
+    <bool name="hasHighBrightness">true</bool>
+</resources>

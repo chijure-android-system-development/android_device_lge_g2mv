@@ -16,8 +16,12 @@ TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 
 # Values read from the live D625 recovery header.
-TARGET_KERNEL_SOURCE := kernel/lge/d625
+# Stable builds pack the stock D62510c prebuilt kernel. The sources remain at
+# kernel/lge/d625 for later panel/Wi-Fi work; kernel.mk only uses PREBUILT when
+# TARGET_KERNEL_SOURCE does not resolve to an existing tree.
+TARGET_KERNEL_SOURCE := kernel/lge/d625-prebuilt-only
 TARGET_KERNEL_CONFIG := pda_android_defconfig
+TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
 BOARD_KERNEL_BASE := 0x10000000
 BOARD_KERNEL_PAGESIZE := 2048
 BOARD_KERNEL_CMDLINE := androidboot.hardware=g2mv vmalloc=440M
@@ -48,6 +52,13 @@ TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK := false
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_PATH)/bluetooth
+
+# max77660 haptic (not timed_output); path relative to hardware/libhardware_legacy.
+BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/lge/g2mv/vibrator/vibrator.c
+
+# NXP PN547 on /dev/pn547 (init also symlinks /dev/pn544 for the NCI HAL).
+BOARD_NFC_CHIPSET := pn547
+BOARD_NFC_HAL_SUFFIX := $(TARGET_DEVICE)
 
 BOARD_WLAN_DEVICE := bcmdhd
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_bcmdhd

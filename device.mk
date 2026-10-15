@@ -1,9 +1,12 @@
 LOCAL_PATH := device/lge/g2mv
 
+DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
+
 $(call inherit-product-if-exists, vendor/lge/g2mv/g2mv-vendor.mk)
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/audio_policy.conf:system/etc/audio_policy.conf \
+    $(LOCAL_PATH)/configs/nvcamera.conf:system/etc/nvcamera.conf \
     $(LOCAL_PATH)/rootdir/fstab.g2mv:root/fstab.g2mv \
     $(LOCAL_PATH)/rootdir/init.g2mv.rc:root/init.g2mv.rc \
     $(LOCAL_PATH)/rootdir/init.g2mv_product.rc:root/init.g2mv_product.rc \
@@ -29,7 +32,13 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
     frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
     frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
-    frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml
+    frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
+    frameworks/native/data/etc/android.hardware.bluetooth.xml:system/etc/permissions/android.hardware.bluetooth.xml \
+    frameworks/native/data/etc/android.hardware.bluetooth_le.xml:system/etc/permissions/android.hardware.bluetooth_le.xml \
+    $(LOCAL_PATH)/configs/bt_vendor.conf:system/etc/bluetooth/bt_vendor.conf \
+    frameworks/native/data/etc/android.hardware.nfc.xml:system/etc/permissions/android.hardware.nfc.xml \
+    frameworks/native/data/etc/android.hardware.nfc.hce.xml:system/etc/permissions/android.hardware.nfc.hce.xml \
+    frameworks/native/data/etc/com.android.nfc_extras.xml:system/etc/permissions/com.android.nfc_extras.xml
 
 PRODUCT_PACKAGES += \
     audio_policy.default \
@@ -47,7 +56,11 @@ PRODUCT_PACKAGES += \
     tinycap \
     tinymix \
     tinyplay \
-    wpa_supplicant
+    wpa_supplicant \
+    NfcNci \
+    nfc_nci.g2mv \
+    Tag \
+    com.android.nfc_extras
 
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.default_network=9 \
@@ -59,7 +72,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.input.noresample=1 \
     af.resampler.quality=4 \
     wifi.interface=wlan0 \
-    persist.sys.usb.config=mtp,adb
+    persist.sys.usb.config=mtp,adb \
+    ro.nfc.port=I2C \
+    ro.camera.sound.forced=0
 
 PRODUCT_CHARACTERISTICS := default
 PRODUCT_AAPT_CONFIG := normal hdpi xhdpi
