@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Enable Settings toggle + DisplayPowerController software auto-brightness. -->
+    <bool name="config_automatic_brightness_available">true</bool>
+
+    <!-- LUX control points for APDS9930 (luxdata ~tens to thousands). -->
+    <integer-array name="config_autoBrightnessLevels">
+        <item>5</item>
+        <item>15</item>
+        <item>40</item>
+        <item>100</item>
+        <item>250</item>
+        <item>500</item>
+        <item>1000</item>
+        <item>2000</item>
+        <item>4000</item>
+    </integer-array>
+
+    <!-- Backlight (0-255); length = levels + 1. -->
+    <integer-array name="config_autoBrightnessLcdBacklightValues">
+        <item>15</item>
+        <item>30</item>
+        <item>45</item>
+        <item>70</item>
+        <item>100</item>
+        <item>130</item>
+        <item>165</item>
+        <item>200</item>
+        <item>230</item>
+        <item>255</item>
+    </integer-array>
+</resources>

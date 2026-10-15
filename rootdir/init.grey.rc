@@ -221,6 +221,17 @@ on boot
 # Touch
     chown system system /sys/class/input/input0/enabled
     chown system system /sys/class/input/input1/enabled
+    # APDS9930 ALS/PS sysfs for sensors.g2mv LightSensor/ProximitySensor
+    chown system system /sys/class/input/input0/device/enable
+    chown system system /sys/class/input/input0/device/poll_delay
+    chown system system /sys/class/input/input0/device/enable_als_sensor
+    chown system system /sys/class/input/input1/device/enable
+    chown system system /sys/class/input/input1/device/enable_ps_sensor
+    chmod 0664 /sys/class/input/input0/device/enable
+    chmod 0664 /sys/class/input/input0/device/poll_delay
+    chmod 0664 /sys/class/input/input0/device/enable_als_sensor
+    chmod 0664 /sys/class/input/input1/device/enable
+    chmod 0664 /sys/class/input/input1/device/enable_ps_sensor
 #	chmod 664 /sys/devices/virtual/input/lge_touch/touch_gesture
 #	chown system system /sys/devices/virtual/input/lge_touch/touch_gesture
     chmod 664 /sys/devices/virtual/input/lge_touch/knock_on_type
@@ -248,13 +259,19 @@ on boot
     chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0011/softreset
     chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0011/softreset
 
-    # Proximity Sensor
+    # Proximity + ALS (APDS993x at 0-0039)
     chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/pdata
     chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/pdata
     chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/ps_detection
     chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/ps_detection
     chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/enable_ps_sensor
     chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/enable_ps_sensor
+    chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/enable_als_sensor
+    chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/enable_als_sensor
+    chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/enable
+    chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/enable
+    chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/poll_delay
+    chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/poll_delay
     chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/ps_run_calibration
     chmod 0660          /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/ps_run_calibration
     chown system system /sys/devices/platform/tegra14-i2c.0/i2c-0/0-0039/ps_cal_result
@@ -471,14 +488,11 @@ service sensord /system/bin/sensord
 #    user root
 #    group root
 
-# Wi-Fi module loading is intentionally disabled during stock-kernel bring-up.
-# bcmdhd.ko does not match the temporary g2ebb907 kernel and can corrupt the
-# timer lists when Android reloads it after a framework restart.
-# TODO: restore this trigger once boot.img and bcmdhd.ko come from one build.
-#on boot
-#    insmod /system/lib/modules/bcmdhd.ko
-#    write /proc/sys/net/core/wmem_default 262144
-#    write /proc/sys/net/core/wmem_max 262144
+# Load bcmdhd early; WifiHW also insmods via WIFI_DRIVER_MODULE_PATH if needed.
+on boot
+    insmod /system/lib/modules/bcmdhd.ko
+    write /proc/sys/net/core/wmem_default 262144
+    write /proc/sys/net/core/wmem_max 262144
 
 # [END][LGE_WIFI][neo-wifi@lge.com]
 

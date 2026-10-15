@@ -16,10 +16,10 @@ TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 
 # Values read from the live D625 recovery header.
-# Stable builds pack the stock D62510c prebuilt kernel. The sources remain at
-# kernel/lge/d625 for later panel/Wi-Fi work; kernel.mk only uses PREBUILT when
-# TARGET_KERNEL_SOURCE does not resolve to an existing tree.
-TARGET_KERNEL_SOURCE := kernel/lge/d625-prebuilt-only
+# Source kernel (pda_android_defconfig) with CM11 backlight fix: PRISM/PWM
+# backlight disabled so only RT8542 leds/lcd-backlight is used. Stock prebuilt
+# remains at $(DEVICE_PATH)/prebuilt/kernel as a fallback if SOURCE is missing.
+TARGET_KERNEL_SOURCE := kernel/lge/d625
 TARGET_KERNEL_CONFIG := pda_android_defconfig
 TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
 BOARD_KERNEL_BASE := 0x10000000
@@ -63,11 +63,10 @@ BOARD_NFC_HAL_SUFFIX := $(TARGET_DEVICE)
 BOARD_WLAN_DEVICE := bcmdhd
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_bcmdhd
 BOARD_HOSTAPD_PRIVATE_LIB := lib_driver_cmd_bcmdhd
-# The current bring-up boot image uses the stock g2ebb907 kernel while the
-# available bcmdhd module is built for another kernel revision.  Treat Wi-Fi as
-# built-in for now so the framework does not repeatedly load/unload the
-# incompatible module and panic in kernel/timer.c.
-# TODO: restore WIFI_DRIVER_MODULE_{PATH,NAME,ARG} with a matching kernel/module.
+# Source kernel and bcmdhd.ko share the same vermagic (built together).
+WIFI_DRIVER_MODULE_PATH := /system/lib/modules/bcmdhd.ko
+WIFI_DRIVER_MODULE_NAME := bcmdhd
+WIFI_DRIVER_MODULE_ARG := "firmware_path=/system/etc/firmware/fw_bcmdhd.bin nvram_path=/system/etc/wifi/bcmdhd.cal"
 WIFI_DRIVER_FW_PATH_PARAM := /sys/module/bcmdhd/parameters/firmware_path
 WIFI_DRIVER_FW_PATH_STA := /system/etc/firmware/fw_bcmdhd.bin
 WIFI_DRIVER_FW_PATH_AP := /system/etc/firmware/fw_bcmdhd_apsta.bin

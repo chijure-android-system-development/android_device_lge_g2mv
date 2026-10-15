@@ -29,7 +29,8 @@ The `cm_g2mv-userdebug` target completed its first successful boot to the CM 11
 launcher on real LG-D625 hardware. The validated bring-up configuration uses:
 
 - the CM 11 Android 4.4.4 userspace built from this tree;
-- the stock `3.4.65-g2ebb907` kernel combined with the CM 11 ramdisk;
+- the D625 source kernel from `kernel/lge/d625` (validated `3.4.65-g53190f9`)
+  with the CM 11 ramdisk; stock `3.4.65-g2ebb907` remains as `prebuilt/kernel`;
 - proprietary files extracted from the D62510c stock-system backup;
 - CM's `audio_policy.default` with `configs/audio_policy.conf`; and
 - `qemu.hw.mainkeys=0` for the on-screen navigation bar.
@@ -50,11 +51,12 @@ speaker routing works.
 |---|---|---|
 | Boot to launcher | Works | `sys.boot_completed=1` |
 | Dalvik heap | Fixed | Stock 1 GB props (`growthlimit=96m`, `heapsize=256m`); stops SystemUI/Camera OOM |
-| Display and EGL | Works with stock kernel | The source-built kernel currently produces a physically black panel |
+| Display and EGL | Works | Source kernel validated on-device: RT8542 `lcd-backlight` only (PWM_PRISM off) |
 | Touch and on-screen navigation | Works | Navigation bar forced with `qemu.hw.mainkeys=0` |
 | ADB | Works | Available during boot and from TWRP |
 | Primary audio and speaker routing | Works, experimental | Uses CM policy plus the stock NVIDIA primary HAL |
-| Wi-Fi | Disabled for safety | See the kernel/module warning below |
+| Wi-Fi | Works | Source kernel + matching `bcmdhd.ko`; `insmod` on boot |
+| Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
 | Cellular / SIM | Broken | `gsm.sim.state=UNKNOWN`, Icera AT+CLCC spam |
 | Camera | Works | Preview OK after `storage_list` overlay + `nvcamera.conf`; polish TBD |
 | Flash / Torch | Works | `RT8542-fled` + Torch overlay; sysfs `chmod 0666` |
@@ -62,16 +64,17 @@ speaker routing works.
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test |
 | Bluetooth | Partial | Feature XML + `bt_vendor.conf`; on/scan OK |
 | GPS, suspend | Not validated | Further hardware testing required |
-| IR proximity (APDS9130) | Works | Normal `TYPE_PROXIMITY` sensor (screen-off in call) |
+| Proximity + ALS (APDS9930) | Works | Always bind `apds993x` (not 9130-only); patched `sensors.g2mv.so` |
 | IR blaster (UEI MXQ616) | Not wired | See Infrared section below |
 
 ### Infrared (IR)
 
-The D625 has **two** IR-related blocks; only the proximity sensor is usable in CM 11 today.
+The D625 has **two** IR-related blocks. Proximity/ALS use the Avago APDS9930;
+the UEI IR blaster is separate and still unwired.
 
 | Hardware | Role | CM 11 status |
 |---|---|---|
-| APDS9130 | Proximity (IR LED) | Works as a standard sensor |
+| APDS9930 | Proximity + ambient light | Works (`TYPE_PROXIMITY` + `TYPE_LIGHT`) |
 | UEI MXQ616 (`uei_irrc`) | IR blaster / Quick Remote | Kernel only powers reset + LED LDO GPIOs; no ConsumerIr HAL |
 
 CM 11 already ships the Android `ConsumerIrManager` API and a stub `consumerir.default` HAL, but this tree does **not** declare `android.hardware.consumerir` or ship a device HAL. Stock Quick Remote / UEI blobs were not extracted into `proprietary-files.txt`.
@@ -82,18 +85,46 @@ CM 11 already ships the Android `ConsumerIrManager` API and a stub `consumerir.d
 - LG G2/G3/G4: `libcir_driver` + UART (`/dev/ttyHSL*`) ConsumerIr HAL — closest pattern to a UART UEI chip, still unported here.
 - No public ConsumerIr / Quick Remote bring-up was found for **g2mv / D625 (Tegra 4i)**.
 
-### Temporary stock-kernel limitation
+### Source kernel (CM11 backlight)
 
-Do not load the packaged `bcmdhd.ko` while using the temporary stock kernel.
-The module and kernel revisions do not match. Repeated framework restarts
-caused Wi-Fi to unload/reload the module, corrupt the kernel timer lists and
-panic in `kernel/timer.c:1089` (`cascade`, fatal exception in interrupt).
+`BoardConfig.mk` builds from `kernel/lge/d625` (`pda_android_defconfig`). The
+stock prebuilt remains at `prebuilt/kernel` as fallback if that tree is missing.
 
-For this bring-up stage, `BoardConfig.mk` does not expose a loadable Wi-Fi
-module to the framework and `rootdir/init.grey.rc` does not `insmod` it. Restore
-those settings only after `boot.img` and `bcmdhd.ko` are built from the same
-kernel revision. The long-term fix is to make the source-built D625 kernel
-initialize the panel correctly and use that kernel together with its modules.
+Black-panel root cause on earlier source builds was **not** DTB (this board uses
+platform panel data; `dsi dt support not available` is expected). The GPL panel
+timings for TIANMA asked for DSI HS 225500 while `pll_d_out0` locks at
+~222.3 MHz, so `tegradc` logged `can't divide … to 37507000` and called
+`dsi_l_540p_4_7_disable`. Fixes in the kernel tree:
+
+- TIANMA/TOVIS `tegra_dc_mode` timings matched to the shipping D62510c zImage
+  (HS clock 222500; no divide failure)
+- `# CONFIG_BACKLIGHT_PWM_PRISM is not set` + `rt8542_bl_enable(true)` so CM
+  drives RT8542 `leds/lcd-backlight`
+- host `dtc` fix (`extern YYLTYPE yylloc`) for modern flex/bison
+- TLK/zram options aligned with the shipping D625 kernel
+
+### Wi-Fi
+
+Source builds pack `bcmdhd.ko` with the same vermagic as the kernel.
+`BoardConfig.mk` sets `WIFI_DRIVER_MODULE_PATH` and `init.grey.rc` `insmod`s
+the module on boot. Validated on-device (STA to a WPA2 AP).
+
+Do **not** load a `bcmdhd.ko` built for a different kernel revision —
+mismatched modules caused timer-list corruption and a panic in
+`kernel/timer.c:1089`.
+
+### Ambient light / auto-brightness
+
+Stock board code bound APDS9130 (PS only) on newer revs, so CM never saw
+`light_sensor`. The kernel now always registers `apds993x` (ALS+PS). Userspace
+needs:
+
+- `prebuilt/sensors.g2mv.so` — patched stock HAL: exposes `TYPE_LIGHT`, uses
+  `/sys/class/input/input0/device/{enable,poll_delay}`, runtime name fixup
+- overlay `config_automatic_brightness_available` + LUX/backlight arrays
+- kernel: accept HAL `poll_delay` in nanoseconds; force ABS_MISC updates when
+  lux is unchanged so `input_report_abs` keeps delivering samples
+- `init.grey.rc` chown/chmod on ALS/PS sysfs nodes for `system`
 
 ### Confirmed remaining issue
 
@@ -237,9 +268,12 @@ belong to the following DTB partition.
 
 ## Kernel
 
-`prebuilt/kernel` is the unmodified stock LG kernel from firmware D62510c
-(source: [android_kernel_lge_d625](https://github.com/chijure-android-system-development/android_kernel_lge_d625)).
-The boot (LNX) and recovery (SOS) images carry the same kernel. Its SHA-256 is:
+Default CM builds use sources at
+[android_kernel_lge_d625](https://github.com/chijure-android-system-development/android_kernel_lge_d625)
+(`TARGET_KERNEL_SOURCE := kernel/lge/d625`). `prebuilt/kernel` is the unmodified
+stock LG kernel from firmware D62510c (SHA-256 below) kept as a known-good
+fallback. The recovery (SOS) image may still use the stock prebuilt until the
+source kernel is validated on-device. Its SHA-256 is:
 
 ```text
 7273a61c75b31d6c5e620bb2ea6dd4cea53a8326e71438b43600acf8b8b67b38
