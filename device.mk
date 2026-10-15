@@ -62,6 +62,16 @@ PRODUCT_PACKAGES += \
     Tag \
     com.android.nfc_extras
 
+# Dalvik heap from stock D62510c (~1 GB RAM). Without these, Zygote uses tiny
+# defaults and SystemUI/Camera2 hit OutOfMemoryError on full-screen bitmaps.
+PRODUCT_PROPERTY_OVERRIDES += \
+    dalvik.vm.heapstartsize=8m \
+    dalvik.vm.heapgrowthlimit=96m \
+    dalvik.vm.heapsize=256m \
+    dalvik.vm.heaptargetutilization=0.25 \
+    dalvik.vm.heapminfree=2m \
+    dalvik.vm.heapmaxfree=8m
+
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.default_network=9 \
     ro.sf.lcd_density=240 \

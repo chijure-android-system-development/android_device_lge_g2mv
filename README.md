@@ -46,6 +46,7 @@ and speaker routing works.
 | Component | Status | Notes |
 |---|---|---|
 | Boot to launcher | Works | `sys.boot_completed=1` |
+| Dalvik heap | Fixed | Stock 1 GB props (`growthlimit=96m`, `heapsize=256m`); stops SystemUI/Camera OOM |
 | Display and EGL | Works with stock kernel | The source-built kernel currently produces a physically black panel |
 | Touch and on-screen navigation | Works | Navigation bar forced with `qemu.hw.mainkeys=0` |
 | ADB | Works | Available during boot and from TWRP |
