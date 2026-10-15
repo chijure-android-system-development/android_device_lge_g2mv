@@ -30,6 +30,12 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_6.xml:system/vendor/firmware/data/factory/platformConfig_6.xml \
     $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_9.xml:system/vendor/firmware/data/factory/platformConfig_9.xml
 
+# UEI MXQ616 IR blaster (Quick Remote). Blobs (jar/so/serialport/permissions)
+# come from vendor/lge/g2mv. librctransport opens /dev/ttyAS1; init.grey.rc
+# symlinks that to ttyHS3. qremote_conf keeps lite_db=true for D625.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/qremote_conf.xml:system/etc/qremote_conf.xml
+
 $(call inherit-product-if-exists, vendor/lge/g2mv/g2mv-vendor.mk)
 
 # Stock audio_policy.tegra.so is ABI-incompatible with CM 11 and SIGSEGVs
@@ -96,7 +102,10 @@ PRODUCT_PACKAGES += \
     NfcNci \
     nfc_nci.g2mv \
     Tag \
-    com.android.nfc_extras
+    com.android.nfc_extras \
+    QuicksetSDK \
+    LGQRemote \
+    UnifiedEULA
 
 # Dalvik heap from stock D62510c (~1 GB RAM). Without these, Zygote uses tiny
 # defaults and SystemUI/Camera2 hit OutOfMemoryError on full-screen bitmaps.
@@ -120,7 +129,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
     wifi.interface=wlan0 \
     persist.sys.usb.config=mtp,adb \
     ro.nfc.port=I2C \
-    ro.camera.sound.forced=0
+    ro.camera.sound.forced=0 \
+    ro.build.target_region=SCA \
+    ro.build.target_country=PE \
+    ro.build.target_operator=OPEN
 
 PRODUCT_CHARACTERISTICS := default
 PRODUCT_AAPT_CONFIG := normal hdpi xhdpi

@@ -60,6 +60,11 @@ system/etc/wifi/p2p_supplicant.conf
 system/etc/wifi/p2p_supplicant_overlay.conf
 system/etc/wifi/wpa_supplicant.conf
 system/etc/wifi/wpa_supplicant_overlay.conf
+system/etc/serialport.txt
+system/etc/permissions/com.uei.control.xml
+system/framework/com.uei.control.jar
+system/app/LGQRemote.apk
+system/app/QuicksetSDK.apk
 system/lib/egl/egl.cfg
 system/lib/egl/libEGL_tegra.so
 system/lib/egl/libEGL_tegra_impl.so
@@ -146,6 +151,7 @@ system/lib/libnvwinsys.so
 system/lib/libnvwsi.so
 system/lib/libopencv24_tegra.so
 system/lib/libpowerservice.so
+system/lib/librctransport.so
 system/lib/libril.so
 system/lib/libril-icera-lge.so
 system/lib/libril-icera.so

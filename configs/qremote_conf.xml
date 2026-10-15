@@ -1,0 +1,997 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Settings>
+    <LG-D500>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D500>
+    <LGMS500>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LGMS500>
+    <LG-D505>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D505>
+    <LG-D605>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D605>
+    <LG-D520>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D520>
+    <VS890>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </VS890>
+    <LG-D600>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D600>
+    <LG-D680>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D680>
+    <LG-D681>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D681>
+    <LG-D682>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D682>
+    <LG-D683>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D683>
+    <LG-D684>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D684>
+    <LG-D685>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D685>
+    <LG-D686>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-D686>
+    <LG-F280>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="false" />
+        <end />
+    </LG-F280>
+    <LG-V500>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-V500>
+    <LG-V507L>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isHomeControlSupported" value="true" />
+        <end />
+    </LG-V507L>
+    <LG-V510>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-V510>
+    <LG-VK810>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-VK810>
+    <LGVK810>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LGVK810>
+    <VK810>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </VK810>
+    <LG-V700>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLandscapeModel" value="true" />
+        <end />
+    </LG-V700>
+    <LG-V400>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-V400>
+    <LG-F300>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <end />
+    </LG-F300>
+    <LG-F340>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-F340>
+    <LG-D959>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D959>
+    <LG-F350>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <item name="isPlusIconActive" value="true" />
+        <end />
+    </LG-F350>
+    <D830>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <item name="isPlusIconActive" value="true" />
+        <end />
+    </D830>
+    <D838>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <item name="isPlusIconActive" value="true" />
+        <end />
+    </D838>
+    <D835>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <item name="isPlusIconActive" value="true" />
+        <end />
+    </D835>
+    <DS1303>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="true" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <item name="isPlusIconActive" value="true" />
+        <end />
+    </DS1303>
+    <LG-D950>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D950>
+    <LG-D950H>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D950H>
+    <LG-D951>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D951>
+    <LG-D955>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D955>
+    <LG-D958>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D958>
+    <LG-D956>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isSetupMap" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D956>
+    <LAS>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LAS>
+    <LGL23>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LGL23>
+    <LS995>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="true" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LS995>
+    <LGL22>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGL22>
+    <LG-D400>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D400>
+    <LG-D407>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D407>
+    <LG-D408>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D408>
+    <D415BK>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomDIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </D415BK>
+    <LG-D415>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D415>
+    <LG-D401>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D401>
+    <D406>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </D406>
+    <LG-D405>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LG-D405>
+    <LG-D409>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D409>
+    <LG-D410>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D410>
+    <LG-D411>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D411>
+    <LG-D412>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D412>
+    <LG-D330>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D330>
+    <LG-D333>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D333>
+    <LG-D320>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D320>
+    <MS415>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </MS415>
+    <MS323>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </MS323>
+    <LG-VS450PP>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-VS450PP>
+    <LG-LS620>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-LS620>
+    <LG-D325f>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D325f>
+    <LG-D340f>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D340f>
+    <LG-D160>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D160>
+    <LG-D160G>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D160G>
+    <LG-D160F>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D160F>
+    <LG-D165f>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D165f>
+    <LG-D165g>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D165g>
+    <LG-VS415PP>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-VS415PP>
+    <LGL34C>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LGL34C>
+    <LG-D175f>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D175f>
+    <LG-D170>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D170>
+    <LG-D170f>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D170f>
+    <LG-D170g>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D170g>
+    <LG-D180f>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D180f>
+    <LG-LS740>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-LS740>
+    <LS740>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isLEDFeedbackSupported" value="true" />
+        <end />
+    </LS740>
+    <LG-VS875>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-VS875>
+    <VS875>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </VS875>
+    <LGL31L>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LGL31L>
+    <F370L>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </F370L>
+    <F370S>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </F370S>
+    <F370K>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </F370K>
+    <LG-D315>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D315>
+    <TBD>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </TBD>
+    <LGL30L>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LGL30L>
+    <LG-D317H>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D317H>
+    <LGD320>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD320>
+    <LGD320f>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD320f>
+    <LGD320g>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD320g>
+    <LGD325>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD325>
+    <LGD325f>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD325f>
+    <LGD325g>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD325g>
+    <LGD325j>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD325j>
+    <LGD330>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD330>
+    <LGD330f>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD330f>
+    <LGD340>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD340>
+    <LGD340f>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD340f>
+    <LGD323>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD323>
+    <LGD323>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGD323>
+    <VS450>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </VS450>
+    <LGMS323>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LGMS323>
+    <LS620>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </LS620>
+    <AS620>
+        <item name="lite_db" value="false" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <end />
+    </AS620>
+    <D618>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </D618>
+    <D610>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </D610>
+    <D620>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </D620>
+    <D625>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </D625>
+    <LG-D625>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="false" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </LG-D625>
+    <F390L>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <item name="isHomeControlSupported" value="false" />
+        <end />
+    </F390L>
+    <D631>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </D631>
+    <VS880>
+        <item name="lite_db" value="true" />
+        <item name="sw_ir" value="true" />
+        <item name="learning_remote" value="false" />
+        <item name="isTablet" value="false" />
+        <item name="isRoomIcon" value="true" />
+        <item name="isSetupMap" value="false" />
+        <end />
+    </VS880>
+</Settings>

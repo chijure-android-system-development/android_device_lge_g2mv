@@ -5,7 +5,10 @@ LG/NVIDIA D625 kernel from `kernel/lge/d625` and uses proprietary files
 extracted from stock D62510c. TWRP for this device lives in a separate
 tree (`twrp-4.4/device/lge/g2mv`), including the twrpTar fork patch.
 
-To extract the proprietary files from a connected, booted stock ROM:
+Vendor blobs live in
+[android_vendor_lge_g2mv](https://github.com/chijure-android-system-development/android_vendor_lge_g2mv)
+(`vendor/lge/g2mv`, branch `cm-11.0`). Add that project to a local manifest
+(or clone it there) before building. To re-extract from a connected stock ROM:
 
 ```bash
 device/lge/g2mv/extract-files.sh
@@ -67,7 +70,7 @@ speaker routing works.
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated (`Entering suspend state LP0`; ~85 s sleep unplugged). USB ADB holds `vbus-tegra-otg` and blocks LP0 while plugged |
 | Proximity + ALS (APDS9930) | Works | Always bind `apds993x` (not 9130-only); patched `sensors.g2mv.so` |
 | Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
-| IR blaster (UEI MXQ616) | Not wired | See Infrared section below |
+| IR blaster (UEI MXQ616) | Works | Stock QuicksetSDK + LGQRemote; UART `ttyHS3` @ 230400, `ttyAS1` symlink; blaster FW version read OK |
 
 ### Offline charge (chargerlogo)
 
@@ -91,20 +94,36 @@ patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
 ### Infrared (IR)
 
 The D625 has **two** IR-related blocks. Proximity/ALS use the Avago APDS9930;
-the UEI IR blaster is separate and still unwired.
+the UEI IR blaster uses the stock Quick Remote stack (path A).
 
 | Hardware | Role | CM 11 status |
 |---|---|---|
 | APDS9930 | Proximity + ambient light | Works (`TYPE_PROXIMITY` + `TYPE_LIGHT`) |
-| UEI MXQ616 (`uei_irrc`) | IR blaster / Quick Remote | Kernel only powers reset + LED LDO GPIOs; no ConsumerIr HAL |
+| UEI MXQ616 (`uei_irrc`) | IR blaster / Quick Remote | Stock QuicksetSDK + LGQRemote over UART `ttyHS3` @ 230400 |
 
-CM 11 already ships the Android `ConsumerIrManager` API and a stub `consumerir.default` HAL, but this tree does **not** declare `android.hardware.consumerir` or ship a device HAL. Stock Quick Remote / UEI blobs were not extracted into `proprietary-files.txt`.
+Kernel `uei_irrc` only toggles reset + LED LDO GPIOs. The protocol runs on
+UART HS3. This tree ships stock blobs under `prebuilt/uei/`:
 
-**Prior art (not drop-in for g2mv):**
+- `QuicksetSDK.apk` — resigned with the platform cert (`sharedUserId=android.uid.system`)
+- `LGQRemote.apk` — Quick Remote UI (dex-patched; do not full-apktool-rebuild on KK):
+  - stub `LEDHandler` (stock needs missing `com.lge.systemservice.core.LGContext`)
+  - forces Quickset `selectRegion(8)` (China lite DB) so TCL codesets exist
+  - featured TV list uses China brands (Konka/Changhong/TCL/Haier/Hisense/Skyworth)
+- `UnifiedEULA` (`uei-eula-stub/`) — CM stub; stock EULA crashes without LG telephony.
+  Provider always reports `agreement=1` so Quick Remote can open
+- `ro.build.target_region=SCA` / `target_country=PE` / `target_operator=OPEN`
+  (carrier props); IR codesets come from the forced China region above, not LatAm
+- `qremote_conf.xml` — keep `lite_db=true` for D625 (full DB path OOMs/crashes Quickset)
+- `com.uei.control.jar` + permissions XML, `librctransport.so`
+- `serialport.txt` → `TRUE,/dev/ttyHS3,230400`
+- `init.grey.rc` symlink `/dev/ttyAS1` → `/dev/ttyHS3` (hardcoded in `librctransport`)
 
-- G2 Mini **Qualcomm** (`g2m` / D620, msm8226): Quarx2k SwIRRC + `liblgir` for QuickRemote ([msm8226-common](https://github.com/LineageOS/android_device_lge_msm8226-common/commit/2d93079ec8093b03d49a91eb4dc4140ff3ea1742)); later LineageOS ConsumerIr HAL via audio/PWM ([g2m Enable IR HAL](https://review.lineageos.org/c/LineageOS/android_device_lge_g2m/+/205695)). That path uses `sw_irrc`, not Tegra UEI.
-- LG G2/G3/G4: `libcir_driver` + UART (`/dev/ttyHSL*`) ConsumerIr HAL — closest pattern to a UART UEI chip, still unported here.
-- No public ConsumerIr / Quick Remote bring-up was found for **g2mv / D625 (Tegra 4i)**.
+Known limit: AOC is not in the shipped Quickset lite brand list (China/USA/Asia
+searches return empty). TCL setup works (codeset test). For AOC, try compatible
+brands from **Otros** if present, or path B ConsumerIr later.
+
+No `android.hardware.consumerir` HAL yet (path B / G2-style `libcir_driver`
+still open). Qualcomm `g2m` SwIRRC is not applicable on Tegra.
 
 ### Source kernel (CM11 backlight)
 
