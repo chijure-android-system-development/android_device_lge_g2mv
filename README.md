@@ -65,7 +65,7 @@ speaker routing works.
 | Flash / Torch | Works | `RT8542-fled` + Torch overlay; sysfs `chmod 0666` |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test |
-| Bluetooth | Partial | Feature XML + `bt_vendor.conf`; on/scan OK |
+| Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan finds nearby devices |
 | GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE). Outdoor TTFF still to confirm (0 sats indoors) |
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated (`Entering suspend state LP0`; ~85 s sleep unplugged). USB ADB holds `vbus-tegra-otg` and blocks LP0 while plugged |
 | Proximity + ALS (APDS9930) | Works | Always bind `apds993x` (not 9130-only); patched `sensors.g2mv.so` |
@@ -145,6 +145,16 @@ Device-tree tweaks vs stock:
 
 Do **not** load `gps_drv.ko` (TI shared-transport driver; wrong stack).
 Outdoor TTFF / satellite lock still needs a sky-view check.
+
+### Bluetooth
+
+Broadcom **BCM4334B0** over UART `ttyHS2`, BlueDroid + `libbt-vendor`, firmware
+`BCM4334B0_002.001.013.1675.1765_RC.hcd`. Config: `configs/bt_vendor.conf`.
+
+Validated on CM11: adapter on, local name `LG G2 mini`, chipset/FW patch load
+OK, inquiry finds nearby devices (phones/Macs/TVs). BDADDR comes from
+`btmacwriter` → `persist.service.bdroid.bdaddr` (locally administered); stock
+`bdaddr_loader` stays disabled unless a factory address path is wired.
 
 ### Source kernel (CM11 backlight)
 
