@@ -45,6 +45,9 @@ on post-fs-data
     symlink /mnt/modem/data/persistent /data/rfs/data/persistent
     chmod 775 /data/rfs/data/debug
     chmod 770 /data/rfs/data/modem
+    # Icera rejects CFUN=1 without productConfig (system) + deviceConfig (MDM).
+    # Seed deviceConfig onto the modem partition when missing.
+    exec /system/bin/sh -c 'if [ ! -f /mnt/modem/data/factory/deviceConfig.bin ] && [ -f /system/vendor/firmware/data/factory/deviceConfig.bin ]; then cp /system/vendor/firmware/data/factory/deviceConfig.bin /mnt/modem/data/factory/deviceConfig.bin; chown radio:log /mnt/modem/data/factory/deviceConfig.bin; chmod 660 /mnt/modem/data/factory/deviceConfig.bin; fi'
 
 # BB mapping symbolic name to the logging ttySHM port
     symlink /dev/ttySHM4 /dev/log_modem

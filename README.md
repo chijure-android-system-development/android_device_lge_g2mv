@@ -57,7 +57,7 @@ speaker routing works.
 | Primary audio and speaker routing | Works, experimental | Uses CM policy plus the stock NVIDIA primary HAL |
 | Wi-Fi | Works | Source kernel + matching `bcmdhd.ko`; `insmod` on boot |
 | Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
-| Cellular / SIM | Broken | `gsm.sim.state=UNKNOWN`, Icera AT+CLCC spam |
+| Cellular / SIM | Works | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA validated |
 | Camera | Works | Preview OK after `storage_list` overlay + `nvcamera.conf`; polish TBD |
 | Flash / Torch | Works | `RT8542-fled` + Torch overlay; sysfs `chmod 0666` |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
@@ -145,6 +145,20 @@ needs:
 - kernel: accept HAL `poll_delay` in nanoseconds; force ABS_MISC updates when
   lux is unchanged so `input_report_abs` keeps delivering samples
 - `init.grey.rc` chown/chmod on ALS/PS sysfs nodes for `system`
+
+### Cellular / Icera SIM
+
+Without stock Icera config blobs the modem stays at `AT+CFUN=0`, reports
+`%ICFG: productConfig: not present` / `deviceConfig: not present`, and every
+`AT+CLCC` fails (framework `gsm.sim.state=UNKNOWN`). This tree ships them under
+`prebuilt/icera/` (also listed in `proprietary-files.txt`):
+
+- `productConfig.bin` + `default_calibration.bin` →
+  `/system/vendor/firmware/data/config/` (RFS symlink)
+- `deviceConfig.bin` → `/system/vendor/firmware/data/factory/`, seeded onto
+  MDM `/mnt/modem/data/factory/` when missing (`init.icera_g2mv.rc`)
+
+Validated on-device: `gsm.sim.state=READY`, operator Claro (`71610`), `HSPA`.
 
 ### Confirmed remaining issue
 

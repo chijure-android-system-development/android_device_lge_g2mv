@@ -17,6 +17,19 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/chargerlogo:root/sbin/chargerlogo
 
+# Icera modem product/device config (must precede vendor mk). Without these
+# the BB stays at CFUN=0 and gsm.sim.state stays UNKNOWN.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/prebuilt/icera/config/productConfig.bin:system/vendor/firmware/data/config/productConfig.bin \
+    $(LOCAL_PATH)/prebuilt/icera/config/default_calibration.bin:system/vendor/firmware/data/config/default_calibration.bin \
+    $(LOCAL_PATH)/prebuilt/icera/factory/deviceConfig.bin:system/vendor/firmware/data/factory/deviceConfig.bin \
+    $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_2.xml:system/vendor/firmware/data/factory/platformConfig_2.xml \
+    $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_3.xml:system/vendor/firmware/data/factory/platformConfig_3.xml \
+    $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_4.xml:system/vendor/firmware/data/factory/platformConfig_4.xml \
+    $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_5.xml:system/vendor/firmware/data/factory/platformConfig_5.xml \
+    $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_6.xml:system/vendor/firmware/data/factory/platformConfig_6.xml \
+    $(LOCAL_PATH)/prebuilt/icera/factory/platformConfig_9.xml:system/vendor/firmware/data/factory/platformConfig_9.xml
+
 $(call inherit-product-if-exists, vendor/lge/g2mv/g2mv-vendor.mk)
 
 # Stock audio_policy.tegra.so is ABI-incompatible with CM 11 and SIGSEGVs

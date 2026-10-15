@@ -243,6 +243,15 @@ system/vendor/firmware/bcm4335/BCM20791B4_002.005.010.0103.0000_Nvidia_I2CGED_NC
 system/vendor/firmware/bcm4335/fw_bcmdhd.bin
 system/vendor/firmware/bcm4339/fw_bcmdhd.bin
 system/vendor/firmware/data/config/audioConfig.bin
+system/vendor/firmware/data/config/default_calibration.bin
+system/vendor/firmware/data/config/productConfig.bin
+system/vendor/firmware/data/factory/deviceConfig.bin
+system/vendor/firmware/data/factory/platformConfig_2.xml
+system/vendor/firmware/data/factory/platformConfig_3.xml
+system/vendor/firmware/data/factory/platformConfig_4.xml
+system/vendor/firmware/data/factory/platformConfig_5.xml
+system/vendor/firmware/data/factory/platformConfig_6.xml
+system/vendor/firmware/data/factory/platformConfig_9.xml
 system/vendor/firmware/libpn547_fw.so
 system/vendor/lib/drm/libdrmwvmplugin.so
 system/vendor/lib/hw/power.g2mv.so
