@@ -63,7 +63,8 @@ speaker routing works.
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test |
 | Bluetooth | Partial | Feature XML + `bt_vendor.conf`; on/scan OK |
-| GPS, suspend | Not validated | Further hardware testing required |
+| GPS | Not validated | Further hardware testing required |
+| Suspend / wake | Works | Screen off/on + Tegra LP0 validated (`Entering suspend state LP0`; ~85 s sleep unplugged). USB ADB holds `vbus-tegra-otg` and blocks LP0 while plugged |
 | Proximity + ALS (APDS9930) | Works | Always bind `apds993x` (not 9130-only); patched `sensors.g2mv.so` |
 | Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
 | IR blaster (UEI MXQ616) | Not wired | See Infrared section below |
