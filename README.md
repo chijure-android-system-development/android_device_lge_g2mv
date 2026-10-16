@@ -67,7 +67,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Wi-Fi | Works | Source kernel + matching `bcmdhd.ko`; `insmod` on boot |
 | Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
 | Cellular / SIM | Works, calls unreliable while asleep | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA. Calls work while awake; incoming calls while the AP is in LP0 can be missed (see [Known issues](#known-issues-2026-10-15)) |
-| Camera / Video | Partial | Stills, flash and recording work. Recording reaches the requested 4 Mbps since `enctune.conf` was added (profiles still capped at 720x480). mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
+| Camera / Video | Partial | Stills, flash and recording work. Recording works at stock quality since `enctune.conf` was added: 1080p at 17 Mbps (default) and 720p at 12 Mbps on the back camera. mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
 | Flash / Torch | Works (stock and source kernel `a205a37`) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel: torch, photo flash and video torch validated, no resets; LED switches off when the camera closes |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test. `com.android.nfc` aborts in `applyRouting` (`libnfc_nci_jni`) on screen on/off |
@@ -391,9 +391,28 @@ Ruled out on the way, with no real change in quality:
 
 The read-back of the OMX parameters showed that the encoder had accepted the
 requested settings every time; the media blobs and the MSENC firmware are
-byte-identical to stock. `configs/media_profiles.xml` still caps every
-profile at 720x480. Stock records 720p at 12 Mbps and 1080p at 17 Mbps; testing
-those profiles is the next step.
+byte-identical to stock.
+
+With the encoder fixed, `configs/media_profiles.xml` now uses the stock
+profiles:
+
+- 480p: 6 Mbps.
+- 720p: 12 Mbps, 1280x720.
+- 1080p: 17 Mbps, 1920x1080, back camera only. The same applies to the
+  timelapse profiles.
+- The H.264 `VideoEncoderCap` limit goes up to 1920x1080 and 17 Mbps.
+  Camera2 refuses any size above that limit.
+
+The Camera2 patch now makes 1080p the default, as on stock; it was 480p
+before. The CIF entry in the quality list gets its own value of 3; before,
+it shared the default value.
+
+The profiles are loaded by zygote, so a change to them needs a framework
+restart (`stop; start`).
+
+Measured on the back camera: 1080p gave 1920x1080 at 17.0 Mbps, 28.4 fps,
+with no frame gaps over 50 ms. Two 720p recordings in a row gave 1280x720 at
+11.9 and 12.1 Mbps. The front camera at 720p has not been tested yet.
 
 #### Hardware resets: worn battery (not the ROM)
 

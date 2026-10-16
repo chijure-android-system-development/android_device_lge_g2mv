@@ -1,3 +1,16 @@
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index b1284b7f..760273aa 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -52,7 +52,7 @@
+         <!-- The integer value of CamcorderProfile.QUALITY_WQVGA -->
+         <item>11</item>
+         <!-- The integer value of CamcorderProfile.QUALITY_CIF -->
+-        <item>@string/pref_video_quality_default</item>
++        <item>3</item>
+         <!-- The integer value of CamcorderProfile.QUALITY_QVGA -->
+         <item>7</item>
+         <!-- The integer value of CamcorderProfile.QUALITY_QCIF -->
 diff --git a/res/values/qcomstrings.xml b/res/values/qcomstrings.xml
 index fb782b66..355485c9 100644
 --- a/res/values/qcomstrings.xml
@@ -11,7 +24,7 @@ index fb782b66..355485c9 100644
  
      <!-- Settings screen, Video encoder dialog radio button choices -->
 diff --git a/res/values/strings.xml b/res/values/strings.xml
-index caa0e75e..8900730b 100644
+index caa0e75e..2134fda3 100644
 --- a/res/values/strings.xml
 +++ b/res/values/strings.xml
 @@ -232,7 +232,7 @@
@@ -19,7 +32,7 @@ index caa0e75e..8900730b 100644
      <string name="pref_video_quality_title">Video quality</string>
      <!-- The default quality value is 3 (CIF) -->
 -    <string name="pref_video_quality_default" translatable="false">3</string>
-+    <string name="pref_video_quality_default" translatable="false">4</string>
++    <string name="pref_video_quality_default" translatable="false">6</string>
      <!-- Video quality setting entry.
      Videos will be recorded in 4k DCI quality. [CHAR LIMIT=24] -->
      <string name="pref_video_quality_entry_4kdci" translatable="false">
