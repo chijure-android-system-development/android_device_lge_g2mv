@@ -70,7 +70,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Camera / Video | Partial | Stills, flash and recording work. Recording works at stock quality since `enctune.conf` was added: 1080p at 17 Mbps (default) and 720p at 12 Mbps on the back camera. mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
 | Flash / Torch | Works (stock and source kernel `a205a37`) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel: torch, photo flash and video torch validated, no resets; LED switches off when the camera closes |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
-| NFC | Partial | PN547 polls with the crystal clock config (see [NFC: PN547 reset on RF start](#nfc-pn547-reset-on-rf-start-fixed)); no more `applyRouting` watchdog aborts. Tag read still needs a field test |
+| NFC | Works | PN547 polls with the crystal clock config (see [NFC: PN547 reset on RF start](#nfc-pn547-reset-on-rf-start-fixed)); no more `applyRouting` watchdog aborts. Android Beam from a stock D625 works (photo, NFC handover to Bluetooth). Tag reading not tested yet (no tag at hand) |
 | Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan + classic bond OK (`LPM_SLEEP_MODE=FALSE` in `vnd_g2mv.txt`) |
 | GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE). Outdoor TTFF still to confirm (0 sats indoors) |
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated on stock and source kernels; baseband wakes the AP (`WAKE59, tegra_bb0`). USB holds `vbus-tegra-otg` and blocks LP0 while plugged, so sleep tests must be unplugged |
@@ -448,6 +448,8 @@ parts:
 
 Checked 2026-10-16 with lock/unlock cycles: no `CORE_RESET_NTF`,
 `RF_DEACTIVATE` answered OK (`41 06 01 00`), and the same NFC process stayed up.
+Android Beam from a stock D625 then sent a 1.6 MB photo: LLCP came up,
+followed by the NFC handover to Bluetooth OPP.
 
 #### Hardware resets: worn battery (not the ROM)
 
