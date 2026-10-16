@@ -52,6 +52,7 @@ TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK := false
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_PATH)/bluetooth
+BOARD_BLUEDROID_VENDOR_CONF := $(DEVICE_PATH)/bluetooth/vnd_g2mv.txt
 
 # max77660 haptic (not timed_output); path relative to hardware/libhardware_legacy.
 BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/lge/g2mv/vibrator/vibrator.c
