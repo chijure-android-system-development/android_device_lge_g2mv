@@ -29,4 +29,12 @@
         <item>230</item>
         <item>255</item>
     </integer-array>
+    <!-- Ignore KnockON and other wake keys while the proximity sensor is
+         covered (pocket). -->
+    <bool name="config_proximityCheckOnWake">true</bool>
+
+    <!-- KnockON key handler (keyhandler/), wakes with a proximity check. -->
+    <string name="config_deviceKeyHandlerLib" translatable="false">/system/framework/com.cyanogenmod.keyhandler.jar</string>
+    <string name="config_deviceKeyHandlerClass" translatable="false">com.cyanogenmod.settings.device.KeyHandler</string>
+
 </resources>

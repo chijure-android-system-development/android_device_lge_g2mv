@@ -1,0 +1,7 @@
+# Atmel S336 touch panel (LG D625).
+#
+# The driver reports KEY_WAKEUP (scancode 143) for a KnockON double tap.
+# Generic.kl maps 143 to POWER WAKE, which wakes without a proximity check.
+# This layout intentionally maps nothing, so the scancode reaches
+# com.cyanogenmod.settings.device.KeyHandler, which wakes through
+# PowerManager.wakeUpWithProximityCheck().

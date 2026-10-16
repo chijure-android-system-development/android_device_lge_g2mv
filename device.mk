@@ -90,6 +90,13 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.nfc.hce.xml:system/etc/permissions/android.hardware.nfc.hce.xml \
     frameworks/native/data/etc/com.android.nfc_extras.xml:system/etc/permissions/com.android.nfc_extras.xml
 
+# KnockON: unmapped wake scancode + proximity-checked key handler.
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/keylayout/atmel_s336.kl:system/usr/keylayout/atmel_s336.kl
+
+PRODUCT_PACKAGES += \
+    com.cyanogenmod.keyhandler
+
 PRODUCT_PACKAGES += \
     audio_policy.default \
     audio.a2dp.default \
