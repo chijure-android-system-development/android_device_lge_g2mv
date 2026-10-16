@@ -7,6 +7,13 @@ DEVICE_PACKAGE_OVERLAYS += $(LOCAL_PATH)/overlay
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/libnfc-nxp.conf:system/etc/libnfc-nxp.conf
 
+# Media: NV AVC + YUV path; OMXCodec skips freeNode/leaks dealers on teardown.
+# Camera2 (EIS off, skip thumbs) + StagefrightRecorder encoder clear.
+# Override vendor media_codecs/profiles (PRODUCT_COPY_FILES first wins).
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/media_codecs.xml:system/etc/media_codecs.xml \
+    $(LOCAL_PATH)/configs/media_profiles.xml:system/etc/media_profiles.xml
+
 # Patched sensors HAL (TYPE_LIGHT + sysfs path). Overrides stock extract.
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/prebuilt/sensors.g2mv.so:system/lib/hw/sensors.g2mv.so
@@ -131,6 +138,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.sys.usb.config=mtp,adb \
     ro.nfc.port=I2C \
     ro.camera.sound.forced=0 \
+    persist.camera.skip_video_thumb=1 \
+    persist.camera.disable_meta=1 \
     ro.build.target_region=SCA \
     ro.build.target_country=PE \
     ro.build.target_operator=OPEN
