@@ -134,6 +134,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.default_network=9 \
+    telephony.lteOnGsmDevice=1 \
     ro.sf.lcd_density=240 \
     rild.libpath=/system/lib/libril-icera-lge.so \
     ap.interface=wlan0 \
