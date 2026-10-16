@@ -76,7 +76,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated on stock and source kernels; baseband wakes the AP (`WAKE59, tegra_bb0`). USB holds `vbus-tegra-otg` and blocks LP0 while plugged, so sleep tests must be unplugged |
 | Proximity + ALS (APDS9930) | Works | Patched `sensors.g2mv.so`. Source kernel binds `apds993x` for ALS; proximity needs kernel `8e1429c` (stock PS tuning: 16 pulses, 50 mA, gain 2x). Without it the screen never blanks in calls |
 | Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
-| KnockON (double tap to wake) | Works (source kernel `wip/knockon`) | Settings > Display toggle (CMHW `TapToWake`); wakes from LP0 (`WAKE6, atmel_s336`); proximity check blocks it in a pocket. See [KnockON](#knockon-double-tap-to-wake). Stock kernel: detection only, never wakes the screen |
+| KnockON (double tap to wake) | Works (source kernel `6945ca8`) | Settings > Display toggle (CMHW `TapToWake`); wakes from LP0 (`WAKE6, atmel_s336`); proximity check blocks it in a pocket. See [KnockON](#knockon-double-tap-to-wake). Stock kernel: detection only, never wakes the screen |
 | IR blaster (UEI MXQ616) | Works | Stock QuicksetSDK + LGQRemote; UART `ttyHS3` @ 230400, `ttyAS1` symlink; blaster FW version read OK |
 
 ### Offline charge (chargerlogo)
@@ -537,7 +537,7 @@ Source kernel status (`cm-11.0` branch):
 | `79897f0` | Panel timings, RT8542 backlight, `apds993x` ALS | Boots (screen ready in 12.8 s); Wi-Fi, SIM, sensors OK. Proximity regressed |
 | `8e1429c` | `apds993x` stock PS tuning (16 pulses, 50 mA, gain 2x) | Calls blank the screen (ear ~990-1023, far ~110-160, thresholds 900/800) |
 | `wip/rt8542-flash-fix` | Do not fire the strobe GPIO on every enable (PMIC brown-out) | Not yet tested; needs a rebase on `8e1429c` |
-| `wip/knockon` (`0b46c6a`..`6945ca8`) | KnockON wake key, apds993x real initial PS state, re-arm after a declined wake | Validated: toggle, pocket, re-arm, wake from LP0. In-call proximity still to recheck |
+| `0b46c6a`..`6945ca8` | KnockON wake key, apds993x real initial PS state, re-arm after a declined wake | Validated: toggle, pocket, re-arm, wake from LP0, in-call proximity (first event at 40 ms, screen off ~200 ms after near) |
 
 
 When the image is built in the Docker Desktop container, the VM file share can
