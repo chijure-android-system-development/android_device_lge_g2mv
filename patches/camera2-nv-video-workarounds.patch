@@ -71,10 +71,36 @@ index 5f8483d6..db75094a 100644
          MediaMetadataRetriever retriever = new MediaMetadataRetriever();
          try {
 diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
-index 72e5b32d..3a24782b 100644
+index 72e5b32d..d02bd7f5 100644
 --- a/src/com/android/camera/VideoModule.java
 +++ b/src/com/android/camera/VideoModule.java
-@@ -2219,11 +2219,11 @@ public class VideoModule implements CameraModule,
+@@ -793,7 +793,8 @@ public class VideoModule implements CameraModule,
+              mParameters = mCameraDevice.getParameters();
+             String defaultQuality = mActivity.getResources().getString(
+                     R.string.pref_video_quality_default);
+-            boolean hasProfile = CamcorderProfile.hasProfile(
++            // g2mv: check the open camera; the front one has no 1080p profile.
++            boolean hasProfile = CamcorderProfile.hasProfile(mCameraId,
+                      Integer.parseInt(defaultQuality));
+             if (hasProfile == true){
+                 videoQuality = defaultQuality;
+@@ -836,6 +837,15 @@ public class VideoModule implements CameraModule,
+         mCaptureTimeLapse = (mTimeBetweenTimeLapseFrameCaptureMs != 0);
+         // TODO: This should be checked instead directly +1000.
+         if (mCaptureTimeLapse) quality += 1000;
++        if (!CamcorderProfile.hasProfile(mCameraId, quality)) {
++            // g2mv: a quality saved for another camera (e.g. 1080p) would make
++            // CamcorderProfile.get throw; use this camera's highest instead.
++            int fallback = Integer.parseInt(CameraSettings.getSupportedHighestVideoQuality(
++                    mCameraId, videoQuality, mCameraDevice.getParameters()));
++            Log.w(TAG, "No profile " + quality + " for camera " + mCameraId
++                    + ", using " + fallback);
++            quality = mCaptureTimeLapse ? fallback + 1000 : fallback;
++        }
+         mProfile = CamcorderProfile.get(mCameraId, quality);
+         getDesiredPreviewSize();
+         qcomReadVideoPreferences();
+@@ -2219,11 +2229,11 @@ public class VideoModule implements CameraModule,
  
          mParameters.set(CameraUtil.RECORDING_HINT, CameraUtil.TRUE);
  

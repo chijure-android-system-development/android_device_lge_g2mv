@@ -404,7 +404,11 @@ profiles:
   Camera2 refuses any size above that limit.
 
 The Camera2 patch now makes 1080p the default, as on stock; it was 480p
-before. The CIF entry in the quality list gets its own value of 3; before,
+before. It also checks the profile against the camera that is open. Upstream
+called `hasProfile(quality)`, which only checks the back camera, so the front
+camera got 1080p and `CamcorderProfile.get` threw: the app closed on start.
+If a saved quality does not exist for the open camera, the app now falls back
+to that camera's highest quality; the front camera gets 720p. The CIF entry in the quality list gets its own value of 3; before,
 it shared the default value.
 
 The profiles are loaded by zygote, so a change to them needs a framework
