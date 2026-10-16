@@ -72,7 +72,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Works | PN547 polls with the crystal clock config (see [NFC: PN547 reset on RF start](#nfc-pn547-reset-on-rf-start-fixed)); no more `applyRouting` watchdog aborts. Android Beam from a stock D625 works (photo, NFC handover to Bluetooth). Tag reading not tested yet (no tag at hand) |
 | Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan + classic bond OK (`LPM_SLEEP_MODE=FALSE` in `vnd_g2mv.txt`) |
-| GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE). Outdoor TTFF still to confirm (0 sats indoors) |
+| GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE); plain-text SUPL as on stock. No more 5-minute wakelock (LockClock weather fix). Outdoor TTFF still to confirm (0 sats indoors) |
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated on stock and source kernels; baseband wakes the AP (`WAKE59, tegra_bb0`). USB holds `vbus-tegra-otg` and blocks LP0 while plugged, so sleep tests must be unplugged |
 | Proximity + ALS (APDS9930) | Works | Patched `sensors.g2mv.so`. Source kernel binds `apds993x` for ALS; proximity needs kernel `8e1429c` (stock PS tuning: 16 pulses, 50 mA, gain 2x). Without it the screen never blanks in calls |
 | Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
@@ -195,6 +195,28 @@ Device-tree tweaks vs stock:
 
 Do **not** load `gps_drv.ko` (TI shared-transport driver; wrong stack).
 Outdoor TTFF / satellite lock still needs a sky-view check.
+
+#### GPS kept the device awake for 5 minutes (fixed)
+
+`GPSD` was held for exactly 300 s after every boot and every mobile-data
+reconnect, with the GPS chip powered (nSTDBY high) and no LP0. No app showed
+up in `dumpsys location`. With `log.tag.LocationManagerService` set to
+VERBOSE, the requester turned out to be **LockClock's weather**. It asks for a
+`POWER_LOW`/`ACCURACY_COARSE` provider, and with no Google Play services and
+no network location provider, `getBestProvider` returns `gps`. Indoors there
+is never a fix, so the request ran until LockClock's 5-minute timeout.
+LockClock already skips GPS when Play services are present.
+`lockclock-bound-gps-weather-location.patch` keeps GPS as the fallback, with
+a 60 s timeout and at most one GPS request per hour. Measured: the GPS was
+on for 60 s instead of 300 s, and a second reconnect within the hour did not
+power the chip.
+
+While tracing it, `glgps` also had a stuck TCP session to
+`supl.google.com:7276` (296 unacknowledged bytes). The cause: `gps.conf`
+selects the plain-text SUPL port and carries `LGE_TLS_MODE=0`, which only
+LG's framework reads, while `gpsconfig.xml` had `SuplTlsEnable="true"`.
+`SuplTlsEnable` is now `"false"` (vendor `gpsconfig.xml`), as on stock. SUPL
+wakelocks dropped from about 5 s to 1-2 s per attempt.
 
 ### Bluetooth
 
@@ -805,7 +827,8 @@ building:
 | `bionic-raise-tgkill.patch` | `bionic` | `raise()` uses `tgkill`; fixes the abort deadlock that hung mediaserver |
 | `frameworks-av-nv-camera-encoder-workarounds.patch` | `frameworks/av` | Camera YUV path switch, NV encoder leak, mediaserver recycle, software decoders for thumbnails, no NVIDIA color-format probe |
 | `frameworks-av-omx-node-instance.patch` | `frameworks/av` | **`freeNode` use-after-free fix** (CVE-2017-13154 lock scope), late-callback guard, OMX copy bounds, `allocateNode` failure logging |
-| `camera2-nv-video-workarounds.patch` | `packages/apps/Camera2` | EIS off, skip video thumbnails, 480p default |
+| `camera2-nv-video-workarounds.patch` | `packages/apps/Camera2` | EIS off, skip video thumbnails, 1080p default, per-camera profile check |
+| `lockclock-bound-gps-weather-location.patch` | `packages/apps/LockClock` | Weather location via GPS (no network provider without Google): 60 s timeout, at most once per hour |
 
 ```bash
 patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
@@ -814,5 +837,6 @@ git -C bionic am ../device/lge/g2mv/patches/bionic-raise-tgkill.patch
 git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-nv-camera-encoder-workarounds.patch
 git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-omx-node-instance.patch
 git -C packages/apps/Camera2 apply ../../../device/lge/g2mv/patches/camera2-nv-video-workarounds.patch
+git -C packages/apps/LockClock apply ../../../device/lge/g2mv/patches/lockclock-bound-gps-weather-location.patch
 ```
 
