@@ -570,6 +570,41 @@ Measured wake latency: about 0.6 s from tap to `mxt_fb_resume`. After boot,
 `glgps` holds the `GPSD` wakelock for about 5 minutes while it initialises
 the chip, so LP0 (and an LP0 KnockON test) only starts after that.
 
+### Performance (2026-10-16)
+
+The GPU benchmark is QApp ROM Tester's "GPU benchmark (uncapped)". It renders
+offscreen into an FBO, timed with `glFinish()`, so the 60 Hz vsync does not cap
+it. The on-screen OpenGL test always reads 60 because the panel refreshes at
+60.000 Hz.
+
+| Run | Fill Mpix/s | ALU Mpix/s | Texture Mtexel/s | Geometry Mtri/s | Scene 1280x720 FPS |
+|---|---|---|---|---|---|
+| Other D625, LG stock D62510c (kernel `g95972ac`) | 452.8 | 15.5 | 520.7 | 47.8 | 78.6 |
+| This D625, CM 11, source kernel `a205a37` | 308-353 | 13.7-15.1 | 466-500 | 41-47 | 71-74 |
+| This D625, CM 11, stock kernel `g2ebb907` | 356.0 | 14.1 | 467.6 | 40.2 | 73.2 |
+
+Both ROMs use the same GLES driver (`OpenGL ES 2.0 17.01342`). Ruled out on
+this unit as causes of the gap:
+
+- the CPU governor;
+- the NVIDIA power stack (now running);
+- the kernel (stock and source give the same results);
+- clocks: GPU 595.2 MHz and EMC 518.4 MHz (the top of the EMC table) are
+  reached during the run, with no thermal throttling at 42-49 C;
+- SurfaceFlinger composition: all layers go to HWC overlays.
+
+The fill-rate gap is the most memory-bound test and points to unit-to-unit
+variation. Confirming that needs both ROMs on the same unit.
+
+NVIDIA power stack: `ussrd` loads the `libgov_*` governors and `powerservice`
+uses `libpowerservice_client.so`, with the profile table `/system/etc/power.g2mv.rc`.
+The first extract was missing all of these, so `ussrd` exited every 5 s and
+`powerservice` crash-looped. `vendor/lge/g2mv` now ships them.
+
+On the source kernel, cpu0 stayed on the `conservative` governor because the
+`interactive` switch in `on boot` does not stick there.
+`init.grey.rc` re-applies LG's interactive setup on `sys.boot_completed=1`.
+
 ### Kernel validation workflow
 
 The flashed `boot` partition keeps the **stock kernel** (`3.4.65-g2ebb907`) as
