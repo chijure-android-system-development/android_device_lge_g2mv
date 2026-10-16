@@ -354,11 +354,19 @@ on boot
     #Set default sdcard fs type
     setprop vold.sdcard_fs_type none
 
-# Offline charge: bootloader sets androidboot.mode=chargerlogo. init queues
-# this trigger before early-boot/boot; exec blocks until Power starts Android.
-on chargerlogo
+# Offline charge: the bootloader sets androidboot.mode=chargerlogo, which
+# BoardConfig maps to init's charger mode (BOARD_CHARGING_CMDLINE_*). init.rc
+# runs first and starts healthd-charger; run LG's chargerlogo (it blocks until
+# Power is pressed), then boot Android as usual. healthd-charger has to be
+# stopped after chargerlogo: a stop right after class_start can reach it
+# before it calls setpgid, and init's kill(-pid) then misses it. With
+# mode=chargerlogo it does not draw anything; it only monitors the battery.
+on charger
    write /sys/class/leds/lcd-backlight/brightness 180
    exec /sbin/chargerlogo
+   stop healthd-charger
+   trigger early-boot
+   trigger boot
 
 service auditd /system/bin/auditd -k
 	class main
@@ -467,7 +475,7 @@ service fuse_USBstorage1 /system/bin/sdcard -u 1023 -g 1023 -w 1023 -d /mnt/medi
     disabled
 
 # AOSP offline charge uses healthd-charger from init.rc (class charger).
-# LG offline charge uses the chargerlogo trigger above, not this class.
+# LG offline charge stops it in "on charger" above and runs chargerlogo.
 
 # bugreport is triggered by the VOLUME-DOWN and VOLUME-UP keys
 service bugreport /system/bin/dumpstate -d -v -o /data/storage/bugreports/bugreport

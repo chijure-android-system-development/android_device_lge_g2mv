@@ -75,7 +75,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE); plain-text SUPL as on stock. No more 5-minute wakelock (LockClock weather fix). Outdoor TTFF still to confirm (0 sats indoors) |
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated on stock and source kernels; baseband wakes the AP (`WAKE59, tegra_bb0`). USB holds `vbus-tegra-otg` and blocks LP0 while plugged, so sleep tests must be unplugged |
 | Proximity + ALS (APDS9930) | Works | Patched `sensors.g2mv.so`. Source kernel binds `apds993x` for ALS; proximity needs kernel `8e1429c` (stock PS tuning: 16 pulses, 50 mA, gain 2x). Without it the screen never blanks in calls |
-| Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
+| Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` from `on charger` (CM `BOARD_CHARGING_CMDLINE_*`, no init patch); RT8542 backlight |
 | KnockON (double tap to wake) | Works (source kernel `6945ca8`) | Settings > Display toggle (CMHW `TapToWake`); wakes from LP0 (`WAKE6, atmel_s336`); proximity check blocks it in a pocket. See [KnockON](#knockon-double-tap-to-wake). Stock kernel: detection only, never wakes the screen |
 | IR blaster (UEI MXQ616) | Works | Stock QuicksetSDK + LGQRemote; UART `ttyHS3` @ 230400, `ttyAS1` symlink; blaster FW version read OK |
 
@@ -86,17 +86,29 @@ With the phone powered off, the D625 bootloader boots the kernel with
 ramdisk and a patched `init` that runs the `on chargerlogo` trigger (after
 mounting `/system` for `vendor/etc/chargerimages`) before `early-boot`/`boot`.
 
-CM's AOSP `init` only treated `mode=charger`, so the phone booted the full
-framework instead of the charge animation. This tree:
+CM's `init` only treats `mode=charger` by default, so the phone booted the
+full framework instead of the charge animation. No `system/core` patch is
+needed: CM's `init` can match any cmdline flag for charger mode.
 
-- packages stock `prebuilt/chargerlogo` into the ramdisk (string-patched to
-  use `/sys/class/leds/lcd-backlight/brightness` for RT8542);
-- keeps `on chargerlogo` in `init.grey.rc`;
-- requires `patches/init-chargerlogo.patch` applied under `system/core`.
+- `BoardConfig.mk`: `BOARD_CHARGING_CMDLINE_NAME := androidboot.mode`,
+  `BOARD_CHARGING_CMDLINE_VALUE := chargerlogo`. `/system` is still mounted,
+  because that decision only looks at `mode=charger`. Then only the
+  `charger` trigger runs.
+- `init.grey.rc` `on charger`:
+  1. set the backlight;
+  2. `exec /sbin/chargerlogo`, which blocks until Power is pressed;
+  3. stop `healthd-charger`, which `init.rc` starts first. With
+     `mode=chargerlogo` it draws nothing. A stop right after `class_start`
+     can miss it, because the child has not called `setpgid` yet when init
+     runs `kill(-pid)`; that is why the stop comes after `chargerlogo`;
+  4. `trigger early-boot` and `trigger boot`, so Android starts as before.
+- `prebuilt/chargerlogo` (stock) goes into the ramdisk, string-patched to use
+  `/sys/class/leds/lcd-backlight/brightness` for RT8542.
 
-```bash
-patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
-```
+Validated 2026-10-16 with this `init` flashed. On power-off with USB, the
+bootloader passed `androidboot.mode=chargerlogo` and the LG charge screen
+showed. Power then booted Android with a single `healthd`
+(`healthd-charger` stopped). Normal boot is unchanged.
 
 ### Infrared (IR)
 
@@ -322,9 +334,13 @@ aborts. This is a CM bug, not an NVIDIA one:
   (`BOARD_SKIP_CVE_2017_13154`) notes that the change "breaks playback on some
   devices".
 
-Fix in `patches/frameworks-av-omx-node-instance.patch`: keep the lock around
-`destroyComponentInstance()` (what the CVE needs), but end its scope before
-`delete this`.
+Fix: `BOARD_SKIP_CVE_2017_13154 := true` in `BoardConfig.mk`. It is CM's own
+switch for this backport, and it builds `freeNode` without the lock, as LG's
+stock `libstagefright_omx` does, so no `frameworks/av` patch is needed. The
+switch costs the CVE-2017-13154 mitigation (a `freeNode` race inside
+mediaserver), which the stock ROM never had. Before the switch, a patch kept
+the lock but ended its scope before `delete this`. It was validated the same
+way and then dropped, to leave `frameworks/av` unmodified.
 
 With the fix in place, every workaround that only masked this bug was
 removed:
@@ -338,8 +354,9 @@ removed:
 - `persist.camera.disable_meta` (forced YUV path in `StagefrightRecorder`);
 - EIS off and flash off by default in Camera2.
 
-Validated 2026-10-16 on stock kernel `g2ebb907`, and one mediaserver process
-(the same PID) survived all of it:
+Validated 2026-10-16 on stock kernel `g2ebb907`, with the patch and again with
+`BOARD_SKIP_CVE_2017_13154` (3 more 1080p cycles, thumbnails, playback). Each
+time a single mediaserver process (the same PID) survived all of it:
 
 - 3 front-camera 720p record/close/reopen cycles;
 - 2 back-camera 1080p cycles with EIS on (16.4 and 17.7 Mbps);
@@ -360,12 +377,9 @@ Found by elimination. Each of these was ruled out on the device first:
 | Blob ABI mismatch (audio/camera/OMX structs, vtables) | Audited against LG's 4.4.2 framework libs: compatible. Only `libaudioavp` → `IMediaPlayerService` vtable slot 19 (NVIDIA-added; lands on CM's `updateProxyConfig`) differs, and only on ULP/offload paths this tree does not enable |
 | `persist.camera.disable_meta=0` (metadata buffers) | Crashes unchanged; video still pixelated |
 
-Changes kept from the hunt (in `frameworks-av-omx-node-instance.patch`):
-
-- `OMX::allocateNode` logs failures with `ALOGW` and the error code (was
-  `ALOGV`).
-- The `onMessage` late-callback guard and the copy bounds checks stay as
-  hardening.
+The hunt also added an `onMessage` late-callback guard, OMX copy bounds checks
+and `ALOGW` logging for `allocateNode` failures. None of them ever fired, so
+they went with the patch.
 
 LG's own `OMXCodec::configureCodec` additionally sets
 `OMX.Nvidia.index.config.waitOnFence` (flag 0x200) and
@@ -479,17 +493,15 @@ parts:
    `NXP_CORE_CONF_EXTN` set to the XTAL block. The HAL writes it to the NFCC
    when the file changes. The first RF start after that can still reset once;
    after that, discovery runs with no resets.
-2. **Stuck stack after a reset.** The NFC layer re-initialized the NFCC, and
-   NFA re-enabled its sub-systems. That re-enable calls
-   `NFC_DiscoveryMap(..., NULL)`, which clears the discovery callback, and RF
-   discovery was never started again. On screen-off, `RF_DEACTIVATE_CMD` got
-   `SEMANTIC_ERROR` (`41 06 01 06`, the NFCC was idle), and the response had
-   no callback to go to. JNI then waited forever for
-   `NFA_RF_DISCOVERY_STOPPED_EVT`. `libnfc-nci-reset-recovery.patch` resets
-   the discovery state on a recovery `NFC_ENABLE_REVT` and restarts discovery
-   300 ms later. A timer is needed because EE and HCI do not report enable
-   complete again. If more than 3 recoveries happen in 30 s, the patch stops
-   restarting and only completes a pending stop.
+2. **Stuck stack after a reset.** Before the clock fix, the NFC layer
+   re-initialized the NFCC after each reset. NFA re-enabled its sub-systems
+   with `NFC_DiscoveryMap(..., NULL)`, which clears the discovery callback, so
+   RF discovery never restarted. On screen-off, `RF_DEACTIVATE_CMD` got
+   `SEMANTIC_ERROR` (`41 06 01 06`), and JNI waited forever for
+   `NFA_RF_DISCOVERY_STOPPED_EVT`. A recovery patch for `external/libnfc-nci`
+   restarted discovery. With the XTAL config the NFCC no longer resets, and
+   the unmodified CM `libnfc-nci` passed the same lock/unlock cycles, so the
+   patch was dropped.
 
 Checked 2026-10-16 with lock/unlock cycles: no `CORE_RESET_NTF`,
 `RF_DEACTIVATE` answered OK (`41 06 01 00`), and the same NFC process stayed up.
@@ -842,8 +854,9 @@ are three kinds of change:
 
 1. **Own repositories**: kernel, device tree and vendor blobs, kept as git
    repos on GitHub (branch `cm-11.0`).
-2. **Patches to LineageOS/CyanogenMod projects**: these repos cannot be
-   pushed, so the changes are kept in `patches/`.
+2. **CM build flags and overlays** wherever CM already has a switch.
+   Everything else is a **patch to a CM project** in `patches/`, because
+   those repos cannot be pushed. Only two patches are left;
    `patches/apply-patches.sh` applies them and skips the ones already
    applied.
 3. **Configuration and blob fixes** inside the device and vendor trees: files
@@ -858,21 +871,32 @@ are three kinds of change:
 | `device/lge/g2mv` | `android_device_lge_g2mv` | This tree |
 | `vendor/lge/g2mv` | `android_vendor_lge_g2mv` | Blobs from stock D62510c (`proprietary-files.txt`), plus the NVIDIA power stack libs, `enctune.conf` and `gpsconfig.xml` with SUPL TLS off |
 
+### Handled with CM build flags and overlays (no patch)
+
+Each of these replaced a patch. Copying a CM module into the device tree
+does not work as a replacement for a patch: two modules with the same name
+break the build. Overriding an app means maintaining the whole app.
+
+| Problem | Solution | Validated |
+|---|---|---|
+| Random mediaserver heap corruption after an OMX node was freed: CM's CVE-2017-13154 backport unlocks `mLock` after `delete this` | `BOARD_SKIP_CVE_2017_13154 := true` (CM's switch; same code as LG stock) | 1080p record/close/reopen cycles, thumbnails, HW playback on one mediaserver PID |
+| LG offline charge uses `androidboot.mode=chargerlogo`; CM's init only knows `charger` | `BOARD_CHARGING_CMDLINE_NAME/VALUE` plus `on charger` in `init.grey.rc` | Charge screen, then Power boots Android |
+| NFC stack hung after NFCC resets | Root cause fixed in `libnfc-nxp.conf` (XTAL); unmodified `libnfc-nci` | Lock/unlock cycles, no resets |
+| Camera2 fallback quality was CIF, and the CIF list entry reused the default string | Overlay `overlay/packages/apps/Camera2`: fallback 720p (exists on both cameras), CIF = 3. Camera2 already stores each camera's highest quality on first use, so the back camera still records 1080p by default | Back 1080p, front 720p, no crash |
+
 ### Patches to CyanogenMod projects
 
 | Patch | Project | Problem | Fix | Validated |
 |---|---|---|---|---|
-| `bionic-raise-tgkill.patch` | `bionic` | An `abort()` with the malloc lock held deadlocked in `raise()` → `pthread_kill()`, so a crashed mediaserver hung instead of dying, and incoming calls were missed | `raise()` calls `tgkill(getpid(), gettid(), sig)` directly | Abort now kills mediaserver; calls ring |
-| `frameworks-av-omx-node-instance.patch` | `frameworks/av` | Random mediaserver heap corruption after any OMX node was freed: CM's CVE-2017-13154 backport unlocks `mLock` after `delete this` (use-after-free) | Lock scoped to `destroyComponentInstance()`; also late-callback guard, copy bounds, `allocateNode` failure logging | Record/close/reopen cycles, thumbnails, HW playback on one mediaserver PID |
-| `init-chargerlogo.patch` | `system/core` | LG sets `androidboot.mode=chargerlogo`; AOSP init only knows `charger`, so the full framework booted when charging powered off | Run `/sbin/chargerlogo` before early-boot in that mode | Offline charge screen shows |
-| `libnfc-nci-reset-recovery.patch` | `external/libnfc-nci` | After a `CORE_RESET_NTF`, the NCI version check failed on the NTF and RF discovery was never restarted (NULL discovery callback), so `applyRouting` hung until the NfcService watchdog killed `com.android.nfc` | No version check on the NTF; restart discovery 300 ms after recovery, at most 3 times in 30 s | Lock/unlock cycles, Android Beam |
-| `camera2-video-quality-defaults.patch` | `packages/apps/Camera2` | 480p default; the CIF list entry reused the default value; the front camera crashed with 1080p because `hasProfile()` only checked the back camera | 1080p default, CIF = 3, profile checked against the open camera with fallback to its highest quality | Back 1080p, front 720p |
-| `lockclock-bound-gps-weather-location.patch` | `packages/apps/LockClock` | Without Google Play services the weather's coarse location fell back to GPS, which stayed on 5 minutes on every boot and data reconnect (no LP0) | GPS requests limited to 60 s and once per hour | 60 s session, none on the next reconnect |
+| `bionic-raise-tgkill.patch` | `bionic` | An `abort()` with the malloc lock held deadlocked in `raise()` → `pthread_kill()`, so a crashed mediaserver hung instead of dying, and incoming calls were missed. No build flag covers it; kept so a future heap abort restarts mediaserver instead of hanging it | `raise()` calls `tgkill(getpid(), gettid(), sig)` directly | Abort now kills mediaserver; calls ring |
+| `lockclock-bound-gps-weather-location.patch` | `packages/apps/LockClock` | Without Google Play services the weather's coarse location fell back to GPS, which stayed on 5 minutes on every boot and data reconnect (no LP0). Its defaults are hard-coded in Java, so an overlay cannot change them | GPS requests limited to 60 s and once per hour | 60 s session, none on the next reconnect |
 
-Removed after the `freeNode` fix: `frameworks-av-nv-camera-encoder-workarounds.patch`,
-the `skip_video_thumb` checks in `frameworks/base` and
-`packages/providers/MediaProvider`, and the EIS-off and flash-off defaults
-in Camera2.
+Removed: `frameworks-av-nv-camera-encoder-workarounds.patch` (after the
+`freeNode` fix), `frameworks-av-omx-node-instance.patch`,
+`init-chargerlogo.patch`, `libnfc-nci-reset-recovery.patch` and the Camera2
+patch (replaced as above). `frameworks/base`, `frameworks/av`, `system/core`,
+`external/libnfc-nci`, `packages/apps/Camera2` and
+`packages/providers/MediaProvider` are unmodified.
 
 ### Configuration and blob fixes
 

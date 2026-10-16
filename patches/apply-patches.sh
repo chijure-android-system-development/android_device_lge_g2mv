@@ -21,10 +21,6 @@ fi
 # project directory : patch file
 LIST="
 bionic:bionic-raise-tgkill.patch
-system/core:init-chargerlogo.patch
-frameworks/av:frameworks-av-omx-node-instance.patch
-external/libnfc-nci:libnfc-nci-reset-recovery.patch
-packages/apps/Camera2:camera2-video-quality-defaults.patch
 packages/apps/LockClock:lockclock-bound-gps-weather-location.patch
 "
 

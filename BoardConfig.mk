@@ -41,8 +41,19 @@ TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_HAS_LARGE_FILESYSTEM := true
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery.fstab
 
+# LG offline charge: the bootloader passes androidboot.mode=chargerlogo.
+# CM's init enters its charger mode on this cmdline match (see init.grey.rc).
+BOARD_CHARGING_CMDLINE_NAME := androidboot.mode
+BOARD_CHARGING_CMDLINE_VALUE := chargerlogo
+
 BOARD_USES_GENERIC_AUDIO := false
 BOARD_USES_ALSA_AUDIO := true
+
+# CM 11's CVE-2017-13154 backport unlocks OMXNodeInstance::mLock after
+# freeNode's "delete this" (use-after-free on the freed node), which
+# corrupted the mediaserver heap. Build freeNode without that lock, as LG's
+# stock libstagefright_omx does.
+BOARD_SKIP_CVE_2017_13154 := true
 USE_CAMERA_STUB := false
 USE_OPENGL_RENDERER := true
 BOARD_DISABLE_TRIPLE_BUFFERED_DISPLAY_SURFACES := true

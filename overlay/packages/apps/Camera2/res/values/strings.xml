@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     g2mv: record in 720p by default. 1080p exists only on the back camera,
+     and Camera2 checks the default against the back camera, so a 1080p
+     default would crash the front camera; 720p exists on both. 1080p can
+     still be picked in the menu (saved per camera).
+-->
+<resources>
+    <string name="pref_video_quality_default" translatable="false">5</string>
+</resources>
