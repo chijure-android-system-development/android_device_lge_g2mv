@@ -5,10 +5,12 @@
     <string name="flashDevice">/sys/class/leds/RT8542-fled/brightness</string>
     <string name="flashDeviceLuminosity"></string>
     <string name="flashDeviceLuminosity2"></string>
+    <!-- rt8542-fled only honors 127 (torch) and 255 (strobe); other values
+         log "invalid brightness" and never set FLED mode. -->
     <integer name="valueOff">0</integer>
-    <integer name="valueOn">128</integer>
-    <integer name="valueLow">64</integer>
-    <integer name="valueHigh">128</integer>
+    <integer name="valueOn">127</integer>
+    <integer name="valueLow">127</integer>
+    <integer name="valueHigh">127</integer>
     <integer name="valueDeathRay">255</integer>
     <bool name="hasHighBrightness">true</bool>
 </resources>
