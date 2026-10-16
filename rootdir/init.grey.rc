@@ -401,6 +401,17 @@ service dhcpcd_p2p_p2p0 /system/bin/dhcpcd p2p-p2p0-0
     disabled
     oneshot
 
+# The interactive switch in "on boot" does not stick on the source kernel
+# (cpu0 stays on conservative, which ramps 5% per step); the stock kernel
+# takes it. Re-apply LG's interactive setup once boot has completed.
+on property:sys.boot_completed=1
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+    write /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq 768000
+    write /sys/devices/system/cpu/cpufreq/interactive/target_loads "65 228000:75 768000:85"
+    write /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay 20000
+    write /sys/devices/system/cpu/cpufreq/interactive/io_busy_threshold 50
+    write /sys/devices/system/cpu/cpufreq/interactive/io_is_busy 1
+
 on property:vold.decrypt=trigger_restart_framework
     setprop ro.fuse_sdcard ${persist.fuse_sdcard}
 service dhcpcd_wlan0 /system/bin/dhcpcd -aABKL
@@ -512,14 +523,12 @@ on device-removed-/sys/block/sda
 # TLK storage service
 import init.tlk.rc
 
-# PowerService needs libpowerservice_client.so (missing from extract) and
-# crash-loops; leave disabled — stock CM power path is enough.
+# NVIDIA PowerService (CPU/GPU/EMC scaling hints, power.g2mv.rc profiles).
+# Needs libpowerservice_client.so; ussrd needs the libgov_* governors.
 service powerservice /system/bin/powerservice
     class main
     user system
     group system
-    disabled
-    oneshot
 
 # create filesystems if necessary
 service setup_fs /system/bin/setup_fs \

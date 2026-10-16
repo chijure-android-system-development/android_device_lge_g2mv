@@ -151,6 +151,13 @@ system/lib/libnvwinsys.so
 system/lib/libnvwsi.so
 system/lib/libopencv24_tegra.so
 system/lib/libpowerservice.so
+system/lib/libgov_combinator.so
+system/lib/libgov_cores.so
+system/lib/libgov_cpufs.so
+system/lib/libgov_gpufs.so
+system/lib/libgov_tbc.so
+system/lib/libpowerservice_client.so
+system/etc/power.g2mv.rc
 system/lib/librctransport.so
 system/lib/libril.so
 system/lib/libril-icera-lge.so
