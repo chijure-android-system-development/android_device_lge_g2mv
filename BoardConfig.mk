@@ -57,6 +57,9 @@ BOARD_BLUEDROID_VENDOR_CONF := $(DEVICE_PATH)/bluetooth/vnd_g2mv.txt
 # max77660 haptic (not timed_output); path relative to hardware/libhardware_legacy.
 BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/lge/g2mv/vibrator/vibrator.c
 
+# CMHW: KnockON / double tap to wake (Atmel S336 LPWG).
+BOARD_HARDWARE_CLASS := $(DEVICE_PATH)/cmhw/
+
 # NXP PN547 on /dev/pn547 (init also symlinks /dev/pn544 for the NCI HAL).
 BOARD_NFC_CHIPSET := pn547
 BOARD_NFC_HAL_SUFFIX := $(TARGET_DEVICE)
