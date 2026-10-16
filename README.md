@@ -373,14 +373,36 @@ and both port definitions after `setupBitRate` (check `xFramerate`; tiny
 I-frames suggest a bogus frame rate in the bits-per-frame budget), then try
 `OMX_IndexConfigVideoBitrate` after `OMX_StateExecuting`, or CBR.
 
-#### Unexplained hardware reset
+#### Hardware resets: worn battery (not the ROM)
 
-One hard reset happened while recording video, with mediaserver malloc debug on
-(`pda.bootreason=coldboot`, `lge.bootreason=0xffffffff`). The phone came back
-in `chargerlogo` mode with the full framework running. It did not reproduce in
-later recordings with `/proc/kmsg` streamed to the host. `ram_console` is
-configured but its region is empty (`00000000-00000000 : ram_console`), so
-`/proc/last_kmsg` is unavailable. Reserving it is a pending kernel task.
+Resets with `pda.bootreason=coldboot`, `lge.bootreason=0xffffffff` and
+`lge.pwr_on_rsn=3`, including a boot loop with no SIM and no USB, came from a
+worn battery. The battery's internal resistance is high, so the voltage sags
+under load spikes. The worst spike is around 10 s into boot, when the AVP
+firmware loads and the modem radio powers up. The MAX77660 PMIC then cuts
+power. With USB plugged in, the charger holds the rail up, so the loop stops.
+
+How the battery was identified, 2026-10-16:
+
+- Swapping batteries moved the boot loop to the stock-ROM phone.
+- The QApp battery stress test was run on both batteries. The test runs 10 s
+  idle, then 30 s with the GPU shader, all CPU cores and the torch on, then
+  10 s of recovery. It reads `voltage_now` every 250 ms.
+
+| Battery | Idle | Load average | Load minimum | Drop | Result |
+|---------|------|--------------|--------------|------|--------|
+| Good (80 %) | 4.025 V | 3.824 V | 3.772 V | 253 mV | Recovered to 3.998 V |
+| Worn (66 %) | — | — | — | — | Phone reset during the test |
+
+The MAX17048 fuel gauge has no current sense. Before kernel `46ae513`,
+`voltage_now` was a value cached every 30 s; the kernel now reads VCELL live.
+QApp saves the test's progress every second. If the phone resets, the next
+run of the test reports the phase where it stopped and rates the battery as
+worn.
+
+The fix is a new BL-59UH battery. `ram_console` is configured but its region
+is empty (`00000000-00000000 : ram_console`), so `/proc/last_kmsg` is not
+available. Reserving the region is a pending kernel task.
 
 **Device**: LG G2 Mini LTE / LG-D625  
 **Codename**: g2mv  
