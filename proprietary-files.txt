@@ -27,6 +27,7 @@ system/bin/rild
 system/bin/sensord
 system/etc/audioConfig_qvoice_icera_pc400.xml
 system/etc/audio_effects.conf
+system/etc/enctune.conf
 system/etc/firmware/BCM4334B0_002.001.013.1675.1765_RC.hcd
 system/etc/firmware/fw_bcmdhd.bin
 system/etc/firmware/fw_bcmdhd_apsta.bin

@@ -67,7 +67,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Wi-Fi | Works | Source kernel + matching `bcmdhd.ko`; `insmod` on boot |
 | Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
 | Cellular / SIM | Works, calls unreliable while asleep | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA. Calls work while awake; incoming calls while the AP is in LP0 can be missed (see [Known issues](#known-issues-2026-10-15)) |
-| Camera / Video | Partial | Stills, flash and recording work. The NV AVC encoder outputs ~170-180 kbps instead of the requested 4 Mbps (heavily pixelated). mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
+| Camera / Video | Partial | Stills, flash and recording work. Recording reaches the requested 4 Mbps since `enctune.conf` was added (profiles still capped at 720x480). mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
 | Flash / Torch | Works (stock and source kernel `a205a37`) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel: torch, photo flash and video torch validated, no resets; LED switches off when the camera closes |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test. `com.android.nfc` aborts in `applyRouting` (`libnfc_nci_jni`) on screen on/off |
@@ -298,7 +298,7 @@ Fix in `patches/frameworks-av-omx-node-instance.patch`: keep the lock around
 sound test is pending. Once that test passes, drop the workarounds that only
 masked this bug: NV encoder freeNode skip + `MemoryDealer` leak, mediaserver
 recycle in `CameraService`, `persist.camera.skip_video_thumb`, and the
-thumbnail NV skips below. Then recheck the encoder bitrate.
+thumbnail NV skips below. (The bitrate problem was a separate cause, the missing `enctune.conf`; see Video bitrate.)
 
 Found by elimination. Each of these was ruled out on the device first:
 
@@ -361,17 +361,39 @@ There are two separate causes:
 The baseband wake path works on both kernels: the AP resumes on
 `WAKE59, tegra_bb0` and `RING` is delivered when the modem gets the page.
 
-#### Video bitrate
+#### Video bitrate (fixed: missing `enctune.conf`)
 
-`MPEG4Writer` asks for 4096 kbps (profile 480p is 2.5 Mbps video), but recorded
-files measure about 171 kbps of video. I-frames are about 2.6 KB at 720x480.
-`OMXCodec::setupBitRate` sets `OMX_Video_ControlRateVariable` and the component
-accepts it without error. Unchanged with metadata buffers
-(`persist.camera.disable_meta=0`), 2026-10-16. Next: once the freeNode fix
-lets the encoder tear down cleanly, read back `OMX_IndexParamVideoBitrate`
-and both port definitions after `setupBitRate` (check `xFramerate`; tiny
-I-frames suggest a bogus frame rate in the bits-per-frame budget), then try
-`OMX_IndexConfigVideoBitrate` after `OMX_StateExecuting`, or CBR.
+Recorded video was blocky: the profile asked for 4 Mbps and files measured
+about 0.23 Mbps. The NVIDIA encoder ignored the requested bitrate completely.
+With `screenrecord`, the I-frame was 4.1 KB at both 1 Mbps and 20 Mbps, and
+P-frames were about 40 bytes. The cause was a missing `/system/etc/enctune.conf`.
+`libnvomx.so` reads that file for per-codec and per-resolution encoder settings:
+`IMinQP`/`IMaxQP`, `PMinQP`/`PMaxQP`, `VBR`, `QualityLevel` and others. Without
+it the encoder falls back to internal defaults with a high QP. The file was
+missing from the old stock dump and was pulled from a stock D62510c phone.
+
+Measured with stock kernel `g2ebb907`, 2026-10-16:
+
+| Test | Before | With `enctune.conf` |
+|------|--------|---------------------|
+| Camera, 720x480, profile 4 Mbps | 0.23 Mbps, I-frame 2.3 KB | 4.07 Mbps, I-frame 20 KB |
+| `screenrecord` launcher, 1 Mbps | I 4.1 KB, P 46 B | I 25 KB, P 3.0 KB |
+| `screenrecord` launcher, 20 Mbps | I 4.1 KB, P 42 B | I 25 KB, P 9.9 KB |
+
+Ruled out on the way, with no real change in quality:
+
+- Frame rate set on the output port, and an integer frame rate on the input
+  port.
+- Bitrate set on the input port.
+- The NVIDIA `ratecontrolmode` values 0, 1 and 2, and `stringentbitrate`.
+- `superFineQuality`, the extension the LG camera sets on stock.
+- MSENC forced to 384 MHz.
+
+The read-back of the OMX parameters showed that the encoder had accepted the
+requested settings every time; the media blobs and the MSENC firmware are
+byte-identical to stock. `configs/media_profiles.xml` still caps every
+profile at 720x480. Stock records 720p at 12 Mbps and 1080p at 17 Mbps; testing
+those profiles is the next step.
 
 #### Hardware resets: worn battery (not the ROM)
 
