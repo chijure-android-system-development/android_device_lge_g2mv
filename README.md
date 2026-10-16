@@ -70,7 +70,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Camera / Video | Partial | Stills, flash and recording work. Recording works at stock quality since `enctune.conf` was added: 1080p at 17 Mbps (default) and 720p at 12 Mbps on the back camera. mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
 | Flash / Torch | Works (stock and source kernel `a205a37`) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel: torch, photo flash and video torch validated, no resets; LED switches off when the camera closes |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
-| NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test. `com.android.nfc` aborts in `applyRouting` (`libnfc_nci_jni`) on screen on/off |
+| NFC | Partial | PN547 polls with the crystal clock config (see [NFC: PN547 reset on RF start](#nfc-pn547-reset-on-rf-start-fixed)); no more `applyRouting` watchdog aborts. Tag read still needs a field test |
 | Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan + classic bond OK (`LPM_SLEEP_MODE=FALSE` in `vnd_g2mv.txt`) |
 | GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE). Outdoor TTFF still to confirm (0 sats indoors) |
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated on stock and source kernels; baseband wakes the AP (`WAKE59, tegra_bb0`). USB holds `vbus-tegra-otg` and blocks LP0 while plugged, so sleep tests must be unplugged |
@@ -418,6 +418,37 @@ Measured on the back camera: 1080p gave 1920x1080 at 17.0 Mbps, 28.4 fps,
 with no frame gaps over 50 ms. Two 720p recordings in a row gave 1280x720 at
 11.9 and 12.1 Mbps. The front camera at 720p has not been tested yet.
 
+#### NFC: PN547 reset on RF start (fixed)
+
+`com.android.nfc` was killed on every screen-off after an unlock. The NfcService
+watchdog fired after `applyRouting` had been stuck for 10 s. The cause had two
+parts:
+
+1. **Wrong clock config.** The PN547 on the D625 runs from a crystal
+   (`NXP_SYS_CLK_SRC_SEL=0x01`), and the kernel drives no clock for it. LG's
+   HAL (`nfc_lg.default.so`) sends `NXP_CORE_CONF_EXTN_XTAL`. The AOSP pn54x
+   HAL only reads `NXP_CORE_CONF_EXTN`. The stock value of that key selects
+   PLL 19.2 MHz (`A0 03 = 11`). Once that was written, the NFCC sent
+   `CORE_RESET_NTF` (`60 00 06 A0 ...`) about 10 ms after every
+   `RF_DISCOVER_CMD`. `configs/libnfc-nxp.conf` is now the stock file, with
+   `NXP_CORE_CONF_EXTN` set to the XTAL block. The HAL writes it to the NFCC
+   when the file changes. The first RF start after that can still reset once;
+   after that, discovery runs with no resets.
+2. **Stuck stack after a reset.** The NFC layer re-initialized the NFCC, and
+   NFA re-enabled its sub-systems. That re-enable calls
+   `NFC_DiscoveryMap(..., NULL)`, which clears the discovery callback, and RF
+   discovery was never started again. On screen-off, `RF_DEACTIVATE_CMD` got
+   `SEMANTIC_ERROR` (`41 06 01 06`, the NFCC was idle), and the response had
+   no callback to go to. JNI then waited forever for
+   `NFA_RF_DISCOVERY_STOPPED_EVT`. `libnfc-nci-reset-recovery.patch` resets
+   the discovery state on a recovery `NFC_ENABLE_REVT` and restarts discovery
+   300 ms later. A timer is needed because EE and HCI do not report enable
+   complete again. If more than 3 recoveries happen in 30 s, the patch stops
+   restarting and only completes a pending stop.
+
+Checked 2026-10-16 with lock/unlock cycles: no `CORE_RESET_NTF`,
+`RF_DEACTIVATE` answered OK (`41 06 01 00`), and the same NFC process stayed up.
+
 #### Hardware resets: worn battery (not the ROM)
 
 Resets with `pda.bootreason=coldboot`, `lge.bootreason=0xffffffff` and
@@ -760,7 +791,7 @@ building:
 | Patch | Apply in | Purpose |
 |---|---|---|
 | `init-chargerlogo.patch` | `system/core` | `androidboot.mode=chargerlogo` offline charging |
-| `libnfc-nci-reset-ntf-version.patch` | `external/libnfc-nci` | PN547 CORE_RESET_NTF recovery |
+| `libnfc-nci-reset-recovery.patch` | `external/libnfc-nci` | Recovery from a NFCC CORE_RESET_NTF: no NCI version check on the NTF, restart RF discovery afterwards (at most 3 times in 30 s) |
 | `bionic-raise-tgkill.patch` | `bionic` | `raise()` uses `tgkill`; fixes the abort deadlock that hung mediaserver |
 | `frameworks-av-nv-camera-encoder-workarounds.patch` | `frameworks/av` | Camera YUV path switch, NV encoder leak, mediaserver recycle, software decoders for thumbnails, no NVIDIA color-format probe |
 | `frameworks-av-omx-node-instance.patch` | `frameworks/av` | **`freeNode` use-after-free fix** (CVE-2017-13154 lock scope), late-callback guard, OMX copy bounds, `allocateNode` failure logging |
@@ -768,7 +799,7 @@ building:
 
 ```bash
 patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
-patch -p1 -d external/libnfc-nci < device/lge/g2mv/patches/libnfc-nci-reset-ntf-version.patch
+patch -p1 -d external/libnfc-nci < device/lge/g2mv/patches/libnfc-nci-reset-recovery.patch
 git -C bionic am ../device/lge/g2mv/patches/bionic-raise-tgkill.patch
 git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-nv-camera-encoder-workarounds.patch
 git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-omx-node-instance.patch
