@@ -138,7 +138,8 @@ Qualcomm `g2m` SwIRRC is not applicable on Tegra.
 `prebuilt/uei/lib/libcir_driver.so` (the G3 blob; `len` is the element count).
 The tree also installs `android.hardware.consumerir.xml`, so ConsumerIrManager
 apps see an emitter. `cir_test [addr] [cmd]` is a bring-up tool, not installed
-by default. It sends one NEC frame, by default `0x04 0x08` (LG TV power).
+by default. It sends one NEC frame, by default `0x04 0x08` (LG TV power), or a
+raw pattern with `cir_test -r freq mark space ...`.
 
 Validated: `service call consumer_ir 1` returns 1 (`hasIrEmitter`).
 `transmitIr` returned 0 for 60 frames in a row, and a phone camera showed the
