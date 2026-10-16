@@ -21,7 +21,7 @@ index 8c4f34e5e..d90b5e9f7 100644
      if (mCaptureTimeLapse) {
          if (mTimeBetweenTimeLapseFrameCaptureUs < 0) {
 diff --git a/media/libstagefright/OMXCodec.cpp b/media/libstagefright/OMXCodec.cpp
-index 551807ef1..bcd5b724f 100644
+index 551807ef1..ff5750641 100644
 --- a/media/libstagefright/OMXCodec.cpp
 +++ b/media/libstagefright/OMXCodec.cpp
 @@ -33,6 +33,11 @@
@@ -44,7 +44,26 @@ index 551807ef1..bcd5b724f 100644
  #include <utils/Vector.h>
  
  #include <OMX_Audio.h>
-@@ -2085,10 +2091,21 @@ OMXCodec::~OMXCodec() {
+@@ -573,6 +579,18 @@ sp<MediaSource> OMXCodec::Create(
+ 
+         ALOGV("Attempting to allocate OMX node '%s'", componentName);
+ 
++        if (!createEncoder
++                && (flags & kClientNeedsFramebuffer)
++                && !strncmp(componentName, "OMX.Nvidia.", 11)) {
++            // g2mv: thumbnail extraction. LG's 4.4.2 NVIDIA OMX fails
++            // OMX_GetHandle here and its TVMR open/close error path leaves
++            // the mediaserver heap corrupted. One small frame does not need
++            // the hardware decoder; use the next (software) match.
++            ALOGI("Skipping '%s' for framebuffer client (thumbnail)",
++                  componentName);
++            continue;
++        }
++
+         if (!createEncoder
+                 && (quirks & kOutputBuffersAreUnreadable)
+                 && (flags & kClientNeedsFramebuffer)) {
+@@ -2085,10 +2103,21 @@ OMXCodec::~OMXCodec() {
  
      CHECK(mState == LOADED || mState == ERROR || mState == LOADED_TO_IDLE);
  
@@ -69,7 +88,7 @@ index 551807ef1..bcd5b724f 100644
  
  #ifdef MTK_HARDWARE
      if (!strncmp(mComponentName, "OMX.MTK.", 8)) {
-@@ -2102,6 +2119,31 @@ OMXCodec::~OMXCodec() {
+@@ -2102,6 +2131,31 @@ OMXCodec::~OMXCodec() {
      releaseMediaBuffersOn(kPortIndexInput);
  #endif
  
@@ -101,6 +120,27 @@ index 551807ef1..bcd5b724f 100644
      setState(DEAD);
  
      clearCodecSpecificData();
+diff --git a/media/libstagefright/StagefrightMetadataRetriever.cpp b/media/libstagefright/StagefrightMetadataRetriever.cpp
+index b6752b976..2b987c6fb 100644
+--- a/media/libstagefright/StagefrightMetadataRetriever.cpp
++++ b/media/libstagefright/StagefrightMetadataRetriever.cpp
+@@ -117,6 +117,16 @@ static bool isYUV420PlanarSupported(
+     const char *mime;
+     CHECK(trackMeta->findCString(kKeyMIMEType, &mime));
+ 
++    // g2mv: QueryCodecs(hwCodecOnly) instantiates the NVIDIA decoder only to
++    // read its color formats and destroys it again in Loaded state; NVIDIA's
++    // component teardown corrupts the mediaserver heap. Thumbnails here are
++    // always decoded in software (OMXCodec::Create skips OMX.Nvidia.* for
++    // kClientNeedsFramebuffer), and the software decoders output
++    // YUV420Planar, so skip the probe.
++    if (!strncmp(mime, "video/", 6)) {
++        return true;
++    }
++
+     Vector<CodecCapabilities> caps;
+     if (QueryCodecs(client->interface(), mime,
+                     true, /* queryDecoders */
 diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
 index 832a840f5..3ba118b65 100644
 --- a/services/camera/libcameraservice/CameraService.cpp

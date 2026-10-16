@@ -67,8 +67,8 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Wi-Fi | Works | Source kernel + matching `bcmdhd.ko`; `insmod` on boot |
 | Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
 | Cellular / SIM | Works, calls unreliable while asleep | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA. Calls work while awake; incoming calls while the AP is in LP0 can be missed (see [Known issues](#known-issues-2026-10-15)) |
-| Camera / Video | Partial | Stills OK. Video records but the NV AVC encoder outputs ~171 kbps instead of the requested 4 Mbps (heavily pixelated). NVIDIA OMX video teardown still corrupts the mediaserver heap (see [Known issues](#known-issues-2026-10-15)). Workarounds: YUV path (`persist.camera.disable_meta`), EIS off, skip thumbs, NV encoder leak + mediaserver recycle |
-| Flash / Torch | Works (stock kernel) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel strobe brown-out fix is commit `4ed1762`, not yet validated |
+| Camera / Video | Partial | Stills, flash and recording work. The NV AVC encoder outputs ~170-180 kbps instead of the requested 4 Mbps (heavily pixelated). mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
+| Flash / Torch | Works (stock and source kernel `a205a37`) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel: torch, photo flash and video torch validated, no resets; LED switches off when the camera closes |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test. `com.android.nfc` aborts in `applyRouting` (`libnfc_nci_jni`) on screen on/off |
 | Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan + classic bond OK (`LPM_SLEEP_MODE=FALSE` in `vnd_g2mv.txt`) |
@@ -129,8 +129,43 @@ Known limit: AOC is not in the shipped Quickset lite brand list (China/USA/Asia
 searches return empty). TCL setup works (codeset test). For AOC, try compatible
 brands from **Otros** if present, or path B ConsumerIr later.
 
-No `android.hardware.consumerir` HAL yet (path B / G2-style `libcir_driver`
-still open). Qualcomm `g2m` SwIRRC is not applicable on Tegra.
+No `android.hardware.consumerir` HAL yet. Qualcomm `g2m` SwIRRC is not
+applicable on Tegra.
+
+#### Path B: consumerir (research 2026-10-16, not implemented)
+
+How other LG ports did it:
+
+| Device | IR hardware | CM/Lineage approach |
+|---|---|---|
+| G2 (msm8974), G3, G4, V10, G5 | UEI chip on UART `/dev/ttyHSL1` @ 115200, kernel `lge_uei_irrc` (reset GPIO + LDOs only, like our `uei_irrc`) | `consumerir.<board>.so` calling LG's `libcir_driver.so` (G2 [f2360a69](https://github.com/CyanogenMod/android_device_lge_g2-common/commit/f2360a69e6419fa4d3866796d658bb9e8c704f9a), G3 [68df0c18](https://github.com/CyanogenMod/android_device_lge_g3-common/commit/68df0c182b2cdce03fb35a4943cef29f96e335cd); open wrapper in [LineageOS lge common](https://github.com/LineageOS/android_device_lge_common/blob/master/consumerir/ConsumerIr.cpp)) |
+| G2 Mini D620, L70, L90 (msm8226), G Pad 7 | Audio-codec PWM, no UEI | [Audio IRRC HAL](https://github.com/LineageOS/android_device_lge_msm8226-common/blob/cm-14.1/consumerir/consumerir.c); not applicable |
+| G3 KitKat ROMs | UEI | Stock `LGQRemote` + `QuicksetSDK` (what this tree does), `chmod 666` on the UART, fake `target_country`/`operator` props |
+| LeEco msm8996 | UEI | HAL relays to the stock UEI QuickSet service (`com.uei.control.IControl`) |
+
+`libcir_driver.so` (taken from LG G3 Lollipop blobs) exports
+`transmitIr(const char *dev, int baud, int freq, int pattern[], int len)`.
+It converts a raw ConsumerIr pattern into UEI's "learner buffer" (frequency,
+timing table, data table, checksum), wakes the chip, writes the buffer and
+reads the reply. It accepts exactly **115200 or 230400** baud (B115200/B230400
+in its literal pool), takes the device path as a parameter, and depends only
+on `liblog`/`libc`/`libm`/`libdl`/`libstdc++`, so it should load on KitKat.
+The two Lineage wrappers disagree on `len` (element count in the C HAL, bytes
+in HIDL), so test both.
+
+Plan for the D625:
+
+1. Write a small `consumerir.g2mv.so` that calls `transmitIr("/dev/ttyHS3",
+   230400, freq, pattern, len)`, with `uei_irrc` raising reset and the LED LDO,
+   and `android.hardware.consumerir.xml`. Any ConsumerIrManager app would
+   then work, without LG's EULA stub or the dex-patched QuickRemote.
+2. If the chip rejects that framing, use a LeEco-style bridge to our working
+   QuicksetSDK service instead. LG's `IControl` uses `sendIRPattern` =
+   transaction 16 and `getLastResultCode` = 13, after
+   `ISetup.getSession()`/`activateQuicksetService(token)`.
+
+No public documentation of the UEI UART protocol was found; the framing lives
+in `libcir_driver.so`.
 
 ### GPS
 
@@ -231,53 +266,73 @@ Validated on-device: `gsm.sim.state=READY`, operator Claro (`71610`), `HSPA`.
 Logs for everything below are in the build tree under `device-logs/`
 (`stepA-*`, `stock-g2ebb907-*`, `video-reset-*`, `reboot-loop-*`).
 
-#### mediaserver heap corruption (NVIDIA OMX video)
+#### mediaserver heap corruption
 
-`mediaserver` aborts with `heap corruption detected by dlmalloc/dlfree/
-tmalloc_large`. It happens on both kernels, so it is not a kernel bug. The abort
-is only where the damage is *noticed* (`~OMXCodec`, `~MemoryDealer`,
-`OMX::allocateNode`, `MediaCodecList`, `AString`); the writer runs earlier.
+`mediaserver` aborted with `heap corruption detected by dlmalloc/dlfree/
+tmalloc_large`, on both kernels. The abort site is only where the damage is
+*noticed* (`~OMXCodec`, `~MemoryDealer`, `OMX::allocateNode`,
+`MediaCodecList`, `AString`, `~CallbackDispatcher`). In every case it is the
+first heap operation after an OMX node is destroyed.
 
-What reproduces it, in order of reliability:
+**Root cause, fix pending device validation (2026-10-16):** CM 11's backport of
+CVE-2017-13154 (`frameworks/av` commit `9745c8f66`, "use a lock around
+OMX::freeNode") puts a function-scope `Mutex::Autolock _l(mLock)` in
+`OMXNodeInstance::freeNode`. KitKat's `freeNode` ends in `delete this`, so the
+lock's destructor unlocks `mLock` inside the already freed instance. `mLock` is
+the instance's first member, so the unlock's atomic decrement writes 0 over
+dlmalloc's free-chunk `fd` link. The next malloc or free that walks that bin
+aborts. This is a CM bug, not an NVIDIA one:
 
-1. Ending a video recording (`OMX.Nvidia.h264.encoder` teardown).
-2. Ending playback in Gallery (`OMX.Nvidia.h264.decode` teardown).
-3. Video thumbnails (`StagefrightMetadataRetriever::getFrameAtTime`).
-4. SoundPool decodes (`MediaPlayerService::decode`) on an already damaged heap.
+- It hits software codecs too (UI sounds, `OMX.google.*` thumbnails).
+- It is intermittent: it depends on whether the freed chunk coalesced.
+- `libc.debug.malloc` hides it, because the heap layout changes.
+- The old "skip freeNode for the NVIDIA encoder" workaround only helped
+  because it avoided this path for one node.
+- LG's stock `libstagefright_omx` has no lock there. CM's own follow-up
+  (`BOARD_SKIP_CVE_2017_13154`) notes that the change "breaks playback on some
+  devices".
 
-Two fresh mediaservers can die within 5 s of each other after one recording.
+Fix in `patches/frameworks-av-omx-node-instance.patch`: keep the lock around
+`destroyComponentInstance()` (what the CVE needs), but end its scope before
+`delete this`. It is installed on the device; the recording, playback and
+sound test is pending. Once that test passes, drop the workarounds that only
+masked this bug: NV encoder freeNode skip + `MemoryDealer` leak, mediaserver
+recycle in `CameraService`, `persist.camera.skip_video_thumb`, and the
+thumbnail NV skips below. Then recheck the encoder bitrate.
 
-Ruled out, with evidence:
+Found by elimination. Each of these was ruled out on the device first:
 
-- **FFmpeg extractor.** `libc.debug.malloc=10` blamed `libavutil`, but that is a
-  false positive: FFmpeg allocates with `posix_memalign`, which KitKat bionic
-  sends straight to `dlposix_memalign` and never tracks. With
-  `libFFmpegExtractor.so` renamed away the crash still happened (22:21, NV H.264
-  decoder teardown). FFmpeg was restored.
-- **UI sounds.** Disabling lock and touch sounds did not stop it.
-- **Malloc debug as a detector.** Level 10 guards change the heap layout and hide
-  the bug; a long camera and gallery session with it on had no crash.
-- **`OMXNodeInstance` copy overflow.** `patches/frameworks-av-omx-copy-bounds.patch`
-  bounds-checks `BufferMeta::CopyToOMX/CopyFromOMX` (CM's Qualcomm extradata
-  change copies `nAllocLen - nOffset` without checking `mMem->size()`). It never
-  fired, because without quirks `OMXCodec` uses `useBuffer` and those copies
-  are never reached.
+| Hypothesis | Result |
+|---|---|
+| UI sounds / FFmpeg extractor | Not the cause. Malloc debug blamed `libavutil`, a false positive (KK `posix_memalign` bypasses the tracker) |
+| `BufferMeta` copy overflow | Bounds checks added, never fired (`useBuffer` path) |
+| `requires-allocate-*` quirks for `OMX.Nvidia.*` | No effect; reverted |
+| Late NVIDIA buffer callbacks after free | Guard in `OMXNodeInstance::onMessage` (validates against `mActiveBuffers` under `mLock`), zero hits |
+| Blob ABI mismatch (audio/camera/OMX structs, vtables) | Audited against LG's 4.4.2 framework libs: compatible. Only `libaudioavp` → `IMediaPlayerService` vtable slot 19 (NVIDIA-added; lands on CM's `updateProxyConfig`) differs, and only on ULP/offload paths this tree does not enable |
+| `persist.camera.disable_meta=0` (metadata buffers) | Crashes unchanged; video still pixelated |
 
-Current lead (**applied on the device, not yet validated**): the NVIDIA video
-components need to allocate their own buffers. LG's stock `media_codecs.xml`
-has no quirks because LG's NVIDIA-modified framework handled `OMX.Nvidia.*`
-itself; CM does not. Cpasjuste's CM 11 tree for the same SoC (Tegra 4i "ceres",
-Wiko Wax / Blackphone) declares `requires-allocate-on-input-ports` and
-`requires-allocate-on-output-ports` for them, and `configs/media_codecs.xml`
-now does the same. If recording, playback and thumbnails stop crashing, the
-encoder leak, mediaserver recycle and skip-thumbnail workarounds can probably
-be dropped. Check the encoder bitrate again at the same time.
+Changes kept from the hunt (all in the two `frameworks-av-*` patches):
+
+- `OMXCodec::Create` skips `OMX.Nvidia.*` decoders for
+  `kClientNeedsFramebuffer`, so thumbnails use software.
+  `StagefrightMetadataRetriever::isYUV420PlanarSupported` no longer
+  instantiates the NVIDIA decoder just to read its color formats.
+- `OMX::allocateNode` logs failures with `ALOGW` and the error code (was
+  `ALOGV`).
+- The `onMessage` late-callback guard and the copy bounds checks stay as
+  hardening.
+
+LG's own `OMXCodec::configureCodec` additionally sets
+`OMX.Nvidia.index.config.waitOnFence` (flag 0x200) and
+`OMX.Nvidia.index.config.thumbnailMode` (flag 0x400, `OMX.Nvidia.*` only), with
+a 12-byte `{nSize, nVersion 1.0.0.0, bEnabled}` struct. CM does neither. That
+is not needed for the crash, but it is a reference if NVIDIA decoders
+misbehave.
 
 NVIDIA has not published source for `libnvomx`/`libnvmm*`. `libnvomx.so` only
 talks OpenMAX IL plus the five KitKat extensions (`enableAndroidNativeBuffers`,
 `useAndroidNativeBuffer`, `getAndroidNativeBufferUsage`,
-`storeMetaDataInBuffers`, `prependSPSPPSToIDRFrames`), so the interop boundary
-is `OMXNodeInstance` and the quirks `OMXCodec` applies.
+`storeMetaDataInBuffers`, `prependSPSPPSToIDRFrames`).
 
 #### Abort deadlock (fixed)
 
@@ -311,7 +366,12 @@ The baseband wake path works on both kernels: the AP resumes on
 `MPEG4Writer` asks for 4096 kbps (profile 480p is 2.5 Mbps video), but recorded
 files measure about 171 kbps of video. I-frames are about 2.6 KB at 720x480.
 `OMXCodec::setupBitRate` sets `OMX_Video_ControlRateVariable` and the component
-accepts it without error. Recheck with the allocate quirks; otherwise try CBR.
+accepts it without error. Unchanged with metadata buffers
+(`persist.camera.disable_meta=0`), 2026-10-16. Next: once the freeNode fix
+lets the encoder tear down cleanly, read back `OMX_IndexParamVideoBitrate`
+and both port definitions after `setupBitRate` (check `xFramerate`; tiny
+I-frames suggest a bogus frame rate in the bits-per-frame budget), then try
+`OMX_IndexConfigVideoBitrate` after `OMX_StateExecuting`, or CBR.
 
 #### Unexplained hardware reset
 
@@ -537,7 +597,7 @@ Source kernel status (`cm-11.0` branch):
 | `79897f0` | Panel timings, RT8542 backlight, `apds993x` ALS | Boots (screen ready in 12.8 s); Wi-Fi, SIM, sensors OK. Proximity regressed |
 | `8e1429c` | `apds993x` stock PS tuning (16 pulses, 50 mA, gain 2x) | Calls blank the screen (ear ~990-1023, far ~110-160, thresholds 900/800) |
 | `0b46c6a`..`6945ca8` | KnockON wake key, apds993x real initial PS state, re-arm after a declined wake | Validated: toggle, pocket, re-arm, wake from LP0, in-call proximity (first event at 40 ms, screen off ~200 ms after near) |
-| `4ed1762` | RT8542: do not fire the strobe GPIO on every enable (PMIC brown-out), 16 flash/torch levels | **Not yet validated** on-device with the source kernel (step C) |
+| `4ed1762`, `08b479a`, `a205a37` | RT8542 flash: never change mode with the strobe GPIO high (it lights the LED in torch *and* flash mode, so it must be raised for torch too), ignore same-mode rewrites, switch off on NVC release | Validated (step C): Torch app, photo flash, video torch, LED off when the camera closes without PWR_WR off. No PMIC reset in these tests |
 
 
 When the image is built in the Docker Desktop container, the VM file share can
@@ -600,8 +660,8 @@ building:
 | `init-chargerlogo.patch` | `system/core` | `androidboot.mode=chargerlogo` offline charging |
 | `libnfc-nci-reset-ntf-version.patch` | `external/libnfc-nci` | PN547 CORE_RESET_NTF recovery |
 | `bionic-raise-tgkill.patch` | `bionic` | `raise()` uses `tgkill`; fixes the abort deadlock that hung mediaserver |
-| `frameworks-av-nv-camera-encoder-workarounds.patch` | `frameworks/av` | Camera YUV path, NV encoder leak, mediaserver recycle |
-| `frameworks-av-omx-copy-bounds.patch` | `frameworks/av` | Bounds checks and logging on OMX buffer copies (diagnostic hardening) |
+| `frameworks-av-nv-camera-encoder-workarounds.patch` | `frameworks/av` | Camera YUV path switch, NV encoder leak, mediaserver recycle, software decoders for thumbnails, no NVIDIA color-format probe |
+| `frameworks-av-omx-node-instance.patch` | `frameworks/av` | **`freeNode` use-after-free fix** (CVE-2017-13154 lock scope), late-callback guard, OMX copy bounds, `allocateNode` failure logging |
 | `camera2-nv-video-workarounds.patch` | `packages/apps/Camera2` | EIS off, skip video thumbnails, 480p default |
 
 ```bash
@@ -609,7 +669,7 @@ patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
 patch -p1 -d external/libnfc-nci < device/lge/g2mv/patches/libnfc-nci-reset-ntf-version.patch
 git -C bionic am ../device/lge/g2mv/patches/bionic-raise-tgkill.patch
 git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-nv-camera-encoder-workarounds.patch
-git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-omx-copy-bounds.patch
+git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-omx-node-instance.patch
 git -C packages/apps/Camera2 apply ../../../device/lge/g2mv/patches/camera2-nv-video-workarounds.patch
 ```
 
