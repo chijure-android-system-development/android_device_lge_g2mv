@@ -76,6 +76,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Suspend / wake | Works | Screen off/on + Tegra LP0 validated on stock and source kernels; baseband wakes the AP (`WAKE59, tegra_bb0`). USB holds `vbus-tegra-otg` and blocks LP0 while plugged, so sleep tests must be unplugged |
 | Proximity + ALS (APDS9930) | Works | Patched `sensors.g2mv.so`. Source kernel binds `apds993x` for ALS; proximity needs kernel `8e1429c` (stock PS tuning: 16 pulses, 50 mA, gain 2x). Without it the screen never blanks in calls |
 | Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
+| KnockON (double tap to wake) | Works (source kernel `wip/knockon`) | Settings > Display toggle (CMHW `TapToWake`); wakes from LP0 (`WAKE6, atmel_s336`); proximity check blocks it in a pocket. See [KnockON](#knockon-double-tap-to-wake). Stock kernel: detection only, never wakes the screen |
 | IR blaster (UEI MXQ616) | Works | Stock QuicksetSDK + LGQRemote; UART `ttyHS3` @ 230400, `ttyAS1` symlink; blaster FW version read OK |
 
 ### Offline charge (chargerlogo)
@@ -476,6 +477,39 @@ device/lge/g2mv/extract-kernel.py boot.emmc.win
 
 The script refuses any kernel with a different SHA-256.
 
+### KnockON (double tap to wake)
+
+The Atmel S336 already detects the double tap in hardware (LPWG object T93);
+LG's framework armed it through `lge_touch/lpwg_notify` and woke the screen
+on the `TOUCH_GESTURE_WAKEUP` uevent. CM has neither, so it is wired the
+CyanogenMod way (as `android_kernel_lge_msm8226` does for the same driver)
+with a proximity check on top:
+
+| Layer | Piece |
+|---|---|
+| Kernel `atmel_s336` | On T93 (and T24) while suspended, report `KEY_WAKEUP`. 1.5 s later, if still suspended, re-arm gesture mode; otherwise a declined wake left the chip in active mode and KnockON dead |
+| Kernel `apds993x` | On PS enable: arm "far" thresholds, measure the first valid cycle (STATUS.PVALID), and report it 40 ms later from a delayed work, always as a fresh event |
+| `sensors.g2mv.so` | `setInitialState()` no longer queues its hardcoded 5.0 (far) event (binary patch at 0x3078) |
+| `keylayout/atmel_s336.kl` | Leaves scancode 143 unmapped (`Generic.kl` maps it to `POWER`, which wakes without any check) |
+| `keyhandler/` | `com.cyanogenmod.keyhandler` `DeviceKeyHandler`: scancode 143 → `PowerManager.wakeUpWithProximityCheck()` |
+| `cmhw/TapToWake` | Settings toggle: writes `1 1` / `1 0` to `lpwg_notify`, state in `persist.sys.tap_to_wake` |
+| Overlay | `config_proximityCheckOnWake=true`, `config_deviceKeyHandlerLib/Class` |
+
+Why the proximity path needed three fixes: CM's check enables the sensor
+after the tap and takes the *first* event within 250 ms. The HAL invented a
+"far" first event, the input core dropped an unchanged ABS value, and an
+event raised inside the enable call reached KitKat's `SystemSensorManager`
+before the listener had registered the sensor, so it was discarded and the
+timeout woke the screen.
+
+LG's stock ROM instead keeps the proximity sensor on for as long as the
+screen is off (visible on the stock ROM) and gates the uevent itself. The CM
+design only powers the IR LED for about 50 ms per tap.
+
+Measured wake latency: about 0.6 s from tap to `mxt_fb_resume`. After boot,
+`glgps` holds the `GPSD` wakelock for about 5 minutes while it initialises
+the chip, so LP0 (and an LP0 KnockON test) only starts after that.
+
 ### Kernel validation workflow
 
 The flashed `boot` partition keeps the **stock kernel** (`3.4.65-g2ebb907`) as
@@ -503,10 +537,8 @@ Source kernel status (`cm-11.0` branch):
 | `79897f0` | Panel timings, RT8542 backlight, `apds993x` ALS | Boots (screen ready in 12.8 s); Wi-Fi, SIM, sensors OK. Proximity regressed |
 | `8e1429c` | `apds993x` stock PS tuning (16 pulses, 50 mA, gain 2x) | Calls blank the screen (ear ~990-1023, far ~110-160, thresholds 900/800) |
 | `wip/rt8542-flash-fix` | Do not fire the strobe GPIO on every enable (PMIC brown-out) | Not yet tested; needs a rebase on `8e1429c` |
+| `wip/knockon` (`0b46c6a`..`6945ca8`) | KnockON wake key, apds993x real initial PS state, re-arm after a declined wake | Validated: toggle, pocket, re-arm, wake from LP0. In-call proximity still to recheck |
 
-Next kernel step after the flash fix: KnockON / double-tap-to-wake. The
-`atmel_s336` LPWG code only emits a `TOUCH_GESTURE_WAKEUP` uevent for LG's
-framework. It needs a `KEY_POWER` report and a CMHW `TapToWake` class.
 
 When the image is built in the Docker Desktop container, the VM file share can
 serve stale inodes after a host-side `git commit`. The container then sees the
