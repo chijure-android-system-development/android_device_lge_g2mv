@@ -106,7 +106,7 @@ the UEI IR blaster uses the stock Quick Remote stack (path A).
 | Hardware | Role | CM 11 status |
 |---|---|---|
 | APDS9930 | Proximity + ambient light | Works (`TYPE_PROXIMITY` + `TYPE_LIGHT`) |
-| UEI MXQ616 (`uei_irrc`) | IR blaster / Quick Remote | Stock QuicksetSDK + LGQRemote over UART `ttyHS3` @ 230400 |
+| UEI MXQ616 (`uei_irrc`) | IR blaster / Quick Remote | ConsumerIr HAL `consumerir.g2mv` (any remote app), plus stock QuicksetSDK + LGQRemote, both over UART `ttyHS3` @ 230400 |
 
 Kernel `uei_irrc` only toggles reset + LED LDO GPIOs. The protocol runs on
 UART HS3. This tree ships stock blobs under `prebuilt/uei/`:
@@ -129,10 +129,23 @@ Known limit: AOC is not in the shipped Quickset lite brand list (China/USA/Asia
 searches return empty). TCL setup works (codeset test). For AOC, try compatible
 brands from **Otros** if present, or path B ConsumerIr later.
 
-No `android.hardware.consumerir` HAL yet. Qualcomm `g2m` SwIRRC is not
-applicable on Tegra.
+Qualcomm `g2m` SwIRRC is not applicable on Tegra.
 
-#### Path B: consumerir (research 2026-10-16, not implemented)
+#### Path B: consumerir HAL (implemented 2026-10-16)
+
+`consumerir/consumerir.c` builds `consumerir.g2mv.so`. It calls LG's
+`transmitIr("/dev/ttyHS3", 230400, freq, pattern, len)` from
+`prebuilt/uei/lib/libcir_driver.so` (the G3 blob; `len` is the element count).
+The tree also installs `android.hardware.consumerir.xml`, so ConsumerIrManager
+apps see an emitter. `cir_test [addr] [cmd]` is a bring-up tool, not installed
+by default. It sends one NEC frame, by default `0x04 0x08` (LG TV power).
+
+Validated: `service call consumer_ir 1` returns 1 (`hasIrEmitter`).
+`transmitIr` returned 0 for 60 frames in a row, and a phone camera showed the
+LED flashing. Not tested yet: a real TV, and running Quick Remote and the HAL
+at the same time (both open `ttyHS3`).
+
+The research behind it:
 
 How other LG ports did it:
 
@@ -153,14 +166,8 @@ on `liblog`/`libc`/`libm`/`libdl`/`libstdc++`, so it should load on KitKat.
 The two Lineage wrappers disagree on `len` (element count in the C HAL, bytes
 in HIDL), so test both.
 
-Plan for the D625:
-
-1. Write a small `consumerir.g2mv.so` that calls `transmitIr("/dev/ttyHS3",
-   230400, freq, pattern, len)`, with `uei_irrc` raising reset and the LED LDO,
-   and `android.hardware.consumerir.xml`. Any ConsumerIrManager app would
-   then work, without LG's EULA stub or the dex-patched QuickRemote.
-2. If the chip rejects that framing, use a LeEco-style bridge to our working
-   QuicksetSDK service instead. LG's `IControl` uses `sendIRPattern` =
+Fallback, not needed so far: if a TV ignores the frames, a LeEco-style
+bridge to our working QuicksetSDK service could replace the direct framing. LG's `IControl` uses `sendIRPattern` =
    transaction 16 and `getLastResultCode` = 13, after
    `ISetup.getSession()`/`activateQuicksetService(token)`.
 

@@ -43,6 +43,15 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/qremote_conf.xml:system/etc/qremote_conf.xml
 
+# ConsumerIr HAL on the same UEI chip (LG libcir_driver.so from the G3),
+# so any ConsumerIrManager remote app works without Quick Remote.
+PRODUCT_PACKAGES += \
+    consumerir.g2mv \
+    libcir_driver
+
+PRODUCT_COPY_FILES += \
+    frameworks/native/data/etc/android.hardware.consumerir.xml:system/etc/permissions/android.hardware.consumerir.xml
+
 $(call inherit-product-if-exists, vendor/lge/g2mv/g2mv-vendor.mk)
 
 # Stock audio_policy.tegra.so is ABI-incompatible with CM 11 and SIGSEGVs
