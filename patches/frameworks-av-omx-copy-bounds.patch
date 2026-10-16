@@ -1,0 +1,62 @@
+diff --git a/media/libstagefright/omx/OMXNodeInstance.cpp b/media/libstagefright/omx/OMXNodeInstance.cpp
+index bcc1462fd..198f29f64 100644
+--- a/media/libstagefright/omx/OMXNodeInstance.cpp
++++ b/media/libstagefright/omx/OMXNodeInstance.cpp
+@@ -26,6 +26,7 @@
+ #include <OMX_IndexExt.h>
+ 
+ #include <binder/IMemory.h>
++#include <cutils/atomic.h>
+ #include <gui/BufferQueue.h>
+ #include <utils/misc.h>
+ #include <HardwareAPI.h>
+@@ -76,6 +77,7 @@ struct BufferMeta {
+ 
+         size_t bytesToCopy = header->nFlags & OMX_BUFFERFLAG_EXTRADATA ?
+             header->nAllocLen - header->nOffset : header->nFilledLen;
++        bytesToCopy = clampCopy(header, bytesToCopy, "FromOMX");
+         memcpy((OMX_U8 *)mMem->pointer() + header->nOffset,
+                header->pBuffer + header->nOffset, bytesToCopy);
+     }
+@@ -87,10 +89,41 @@ struct BufferMeta {
+ 
+         size_t bytesToCopy = header->nFlags & OMX_BUFFERFLAG_EXTRADATA ?
+             header->nAllocLen - header->nOffset : header->nFilledLen;
++        bytesToCopy = clampCopy(header, bytesToCopy, "ToOMX");
+         memcpy(header->pBuffer + header->nOffset,
+                (const OMX_U8 *)mMem->pointer() + header->nOffset, bytesToCopy);
+     }
+ 
++    // The copy length comes from fields the component owns (nFlags, nAllocLen,
++    // nFilledLen) and was never checked against the shared memory we hold.
++    // Blobs built for another framework revision (g2mv: LG 4.4.2 NVIDIA OMX)
++    // may disagree with us on those, so keep both ends of the memcpy inside
++    // their allocations and log any mismatch.
++    size_t clampCopy(const OMX_BUFFERHEADERTYPE *header, size_t bytesToCopy,
++            const char *dir) {
++        size_t memSize = mMem->size();
++        size_t limit = 0;
++        if (header->nOffset <= memSize && header->nOffset <= header->nAllocLen) {
++            size_t memRoom = memSize - header->nOffset;
++            size_t compRoom = header->nAllocLen - header->nOffset;
++            limit = memRoom < compRoom ? memRoom : compRoom;
++        }
++        static volatile int32_t sNoticeBudget = 40;
++        bool clamped = bytesToCopy > limit;
++        bool odd = (header->nFlags & OMX_BUFFERFLAG_EXTRADATA)
++                || header->nAllocLen != memSize;
++        if (clamped || (odd && android_atomic_dec(&sNoticeBudget) > 0)) {
++            ALOGW("Copy%s %p: flags=0x%lx alloc=%lu off=%lu filled=%lu mem=%zu"
++                  " copy=%zu limit=%zu%s", dir, header->pBuffer,
++                  (unsigned long)header->nFlags,
++                  (unsigned long)header->nAllocLen,
++                  (unsigned long)header->nOffset,
++                  (unsigned long)header->nFilledLen, memSize, bytesToCopy,
++                  limit, clamped ? " CLAMPED" : "");
++        }
++        return clamped ? limit : bytesToCopy;
++    }
++
+     void setGraphicBuffer(const sp<GraphicBuffer> &graphicBuffer) {
+         mGraphicBuffer = graphicBuffer;
+     }

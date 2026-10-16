@@ -7,9 +7,11 @@ byte as NCI version makes recovery fail with "NFCC version is too old".
 Apply under external/libnfc-nci:
   patch -p1 < device/lge/g2mv/patches/libnfc-nci-reset-ntf-version.patch
 
+diff --git a/src/nfc/nfc/nfc_ncif.c b/src/nfc/nfc/nfc_ncif.c
+index 614465e..0f56cd9 100644
 --- a/src/nfc/nfc/nfc_ncif.c
 +++ b/src/nfc/nfc/nfc_ncif.c
-@@ -1355,9 +1355,15 @@ void nfc_ncif_proc_reset_rsp (UINT8 *p, BOOLEAN is_ntf)
+@@ -1356,7 +1356,11 @@ void nfc_ncif_proc_reset_rsp (UINT8 *p, BOOLEAN is_ntf)
  
      if (status == NCI_STATUS_OK)
      {
@@ -22,5 +24,3 @@ Apply under external/libnfc-nci:
          {
              NFC_TRACE_DEBUG2 ("NCI version mismatch!!:0x%02x != 0x%02x ", NCI_VERSION, *p);
              if ((*p) < NCI_VERSION_0_F)
-             {
-                 NFC_TRACE_ERROR0 ("NFCC version is too old");

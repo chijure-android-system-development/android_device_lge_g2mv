@@ -1,0 +1,93 @@
+diff --git a/res/values/qcomstrings.xml b/res/values/qcomstrings.xml
+index fb782b66..355485c9 100644
+--- a/res/values/qcomstrings.xml
++++ b/res/values/qcomstrings.xml
+@@ -54,6 +54,7 @@
+ 
+     <!-- Settings screen, Video encoder title -->
+     <string name="pref_camera_videoencoder_title">Video codec</string>
++    <!-- g2mv: soft MPEG-4 — NV/soft H.264 corrupt mediaserver on this HAL -->
+     <string name="pref_camera_videoencoder_default" translatable="false">h264</string>
+ 
+     <!-- Settings screen, Video encoder dialog radio button choices -->
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index caa0e75e..8900730b 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -232,7 +232,7 @@
+     <!-- The Video quality settings in preference [CHAR LIMIT=21] -->
+     <string name="pref_video_quality_title">Video quality</string>
+     <!-- The default quality value is 3 (CIF) -->
+-    <string name="pref_video_quality_default" translatable="false">3</string>
++    <string name="pref_video_quality_default" translatable="false">4</string>
+     <!-- Video quality setting entry.
+     Videos will be recorded in 4k DCI quality. [CHAR LIMIT=24] -->
+     <string name="pref_video_quality_entry_4kdci" translatable="false">
+@@ -307,7 +307,8 @@
+     <string name="pref_camera_focusmode_label_macro">MACRO</string>
+ 
+     <!-- Default flash mode setting.-->
+-    <string name="pref_camera_flashmode_default" translatable="false">auto</string>
++    <!-- g2mv: auto flash + RT8542 can POR the PMIC; default off -->
++    <string name="pref_camera_flashmode_default" translatable="false">off</string>
+ 
+     <!-- Value for flash off setting-->
+     <string name="pref_camera_flashmode_no_flash" translatable="false">no_flash</string>
+diff --git a/src/com/android/camera/Thumbnail.java b/src/com/android/camera/Thumbnail.java
+index 5f8483d6..db75094a 100644
+--- a/src/com/android/camera/Thumbnail.java
++++ b/src/com/android/camera/Thumbnail.java
+@@ -18,6 +18,7 @@ package com.android.camera;
+ 
+ import android.graphics.Bitmap;
+ import android.media.MediaMetadataRetriever;
++import android.os.SystemProperties;
+ 
+ import java.io.FileDescriptor;
+ 
+@@ -32,6 +33,11 @@ public class Thumbnail {
+ 
+     private static Bitmap createVideoThumbnailBitmap(String filePath, FileDescriptor fd,
+             int targetWidth) {
++        // Tegra/Nvidia encode path can leave mediaserver heap corrupt; the next
++        // OMX allocateNode in getFrameAtTime aborts the process (Camera dies).
++        if (SystemProperties.getBoolean("persist.camera.skip_video_thumb", false)) {
++            return null;
++        }
+         Bitmap bitmap = null;
+         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+         try {
+diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
+index 72e5b32d..3a24782b 100644
+--- a/src/com/android/camera/VideoModule.java
++++ b/src/com/android/camera/VideoModule.java
+@@ -2219,11 +2219,11 @@ public class VideoModule implements CameraModule,
+ 
+         mParameters.set(CameraUtil.RECORDING_HINT, CameraUtil.TRUE);
+ 
+-        // Enable video stabilization. Convenience methods not available in API
+-        // level <= 14
++        // g2mv/NvCamera: EIS + OMX.Nvidia.h264.encoder corrupts mediaserver
++        // heap on MediaRecorder.release (MemoryDealer/dlfree). Keep off.
+         String vstabSupported = mParameters.get("video-stabilization-supported");
+         if ("true".equals(vstabSupported)) {
+-            mParameters.set("video-stabilization", "true");
++            mParameters.set("video-stabilization", "false");
+         }
+ 
+         // Set picture size.
+diff --git a/src/com/android/camera/data/LocalMediaData.java b/src/com/android/camera/data/LocalMediaData.java
+index fe561086..2dbd0981 100644
+--- a/src/com/android/camera/data/LocalMediaData.java
++++ b/src/com/android/camera/data/LocalMediaData.java
+@@ -805,6 +805,10 @@ public abstract class LocalMediaData implements LocalData {
+                 if (isCancelled() || !isUsing()) {
+                     return null;
+                 }
++                if (android.os.SystemProperties.getBoolean(
++                        "persist.camera.skip_video_thumb", false)) {
++                    return null;
++                }
+                 MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                 Bitmap bitmap = null;
+                 try {

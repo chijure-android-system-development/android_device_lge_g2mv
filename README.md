@@ -50,6 +50,12 @@ speaker routing works.
 
 ### CM 11 bring-up status
 
+Rows were first validated before the kernel baseline was pinned, so some mixed
+the stock and source kernels. From 2026-10-15 every result names its kernel; see
+[Kernel validation workflow](#kernel-validation-workflow). "Stock kernel" means
+`3.4.65-g2ebb907` from D62510c; source kernel commits are from
+`android_kernel_lge_d625`.
+
 | Component | Status | Notes |
 |---|---|---|
 | Boot to launcher | Works | `sys.boot_completed=1` |
@@ -60,15 +66,15 @@ speaker routing works.
 | Primary audio and speaker routing | Works, experimental | Uses CM policy plus the stock NVIDIA primary HAL |
 | Wi-Fi | Works | Source kernel + matching `bcmdhd.ko`; `insmod` on boot |
 | Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
-| Cellular / SIM | Works | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA validated |
-| Camera | Works | Preview OK after `storage_list` overlay + `nvcamera.conf`; polish TBD |
-| Flash / Torch | Works | `RT8542-fled` + Torch overlay; sysfs `chmod 0666` |
+| Cellular / SIM | Works, calls unreliable while asleep | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA. Calls work while awake; incoming calls while the AP is in LP0 can be missed (see [Known issues](#known-issues-2026-10-15)) |
+| Camera / Video | Partial | Stills OK. Video records but the NV AVC encoder outputs ~171 kbps instead of the requested 4 Mbps (heavily pixelated). NVIDIA OMX video teardown still corrupts the mediaserver heap (see [Known issues](#known-issues-2026-10-15)). Workarounds: YUV path (`persist.camera.disable_meta`), EIS off, skip thumbs, NV encoder leak + mediaserver recycle |
+| Flash / Torch | Works (stock kernel) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel strobe brown-out fix is on kernel branch `wip/rt8542-flash-fix`, not yet validated |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
-| NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test |
-| Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan finds nearby devices |
+| NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test. `com.android.nfc` aborts in `applyRouting` (`libnfc_nci_jni`) on screen on/off |
+| Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan + classic bond OK (`LPM_SLEEP_MODE=FALSE` in `vnd_g2mv.txt`) |
 | GPS (BCM4752 / glgps) | Stack up | `glgps`+`agpsd`+`gps.tegra`; UART `ttyHS1` @ 921600; nSTDBY gpio63; AGPS cell-ID OK (Claro PE). Outdoor TTFF still to confirm (0 sats indoors) |
-| Suspend / wake | Works | Screen off/on + Tegra LP0 validated (`Entering suspend state LP0`; ~85 s sleep unplugged). USB ADB holds `vbus-tegra-otg` and blocks LP0 while plugged |
-| Proximity + ALS (APDS9930) | Works | Always bind `apds993x` (not 9130-only); patched `sensors.g2mv.so` |
+| Suspend / wake | Works | Screen off/on + Tegra LP0 validated on stock and source kernels; baseband wakes the AP (`WAKE59, tegra_bb0`). USB holds `vbus-tegra-otg` and blocks LP0 while plugged, so sleep tests must be unplugged |
+| Proximity + ALS (APDS9930) | Works | Patched `sensors.g2mv.so`. Source kernel binds `apds993x` for ALS; proximity needs kernel `8e1429c` (stock PS tuning: 16 pulses, 50 mA, gain 2x). Without it the screen never blanks in calls |
 | Offline charge (chargerlogo) | Works | Stock `/sbin/chargerlogo` + init `chargerlogo` trigger; RT8542 backlight |
 | IR blaster (UEI MXQ616) | Works | Stock QuicksetSDK + LGQRemote; UART `ttyHS3` @ 230400, `ttyAS1` symlink; blaster FW version read OK |
 
@@ -149,12 +155,20 @@ Outdoor TTFF / satellite lock still needs a sky-view check.
 ### Bluetooth
 
 Broadcom **BCM4334B0** over UART `ttyHS2`, BlueDroid + `libbt-vendor`, firmware
-`BCM4334B0_002.001.013.1675.1765_RC.hcd`. Config: `configs/bt_vendor.conf`.
+`BCM4334B0_002.001.013.1675.1765_RC.hcd`. Runtime UART/FW:
+`configs/bt_vendor.conf`. Compile-time vendor flags:
+`bluetooth/vnd_g2mv.txt` via `BOARD_BLUEDROID_VENDOR_CONF`.
 
-Validated on CM11: adapter on, local name `LG G2 mini`, chipset/FW patch load
-OK, inquiry finds nearby devices (phones/Macs/TVs). BDADDR comes from
-`btmacwriter` → `persist.service.bdroid.bdaddr` (locally administered); stock
-`bdaddr_loader` stays disabled unless a factory address path is wired.
+LGE `bluedroid_pm` exposes `/proc/bluetooth/sleep/{btwake,proto}` (not AOSP
+bluesleep `lpm`/`btwrite`). With stock `LPM_SLEEP_MODE=1` and no matching wake
+path, the controller slept mid-HCI and bonding failed (`HCI Cmd tout` → BT
+process restart) while inquiry still worked. `vnd_g2mv.txt` sets
+`LPM_SLEEP_MODE=FALSE` until wake is wired to those proc nodes.
+
+Validated on CM11: adapter on, local name `LG G2 mini`, FW patch load OK,
+inquiry + classic bond (Mac Pro LinkKey stored). BDADDR from `btmacwriter` →
+`persist.service.bdroid.bdaddr` (locally administered); stock `bdaddr_loader`
+stays disabled unless a factory address path is wired.
 
 ### Source kernel (CM11 backlight)
 
@@ -211,12 +225,101 @@ Without stock Icera config blobs the modem stays at `AT+CFUN=0`, reports
 
 Validated on-device: `gsm.sim.state=READY`, operator Claro (`71610`), `HSPA`.
 
-### Confirmed remaining issue
+### Known issues (2026-10-15)
 
-`mediaserver` can still restart occasionally with `heap corruption detected by
-dlfree` while decoding/tearing down boot or UI sounds. Unlike the original
-audio-policy crash, this has not killed `system_server`, but the NVIDIA media
-blob compatibility still needs investigation.
+Logs for everything below are in the build tree under `device-logs/`
+(`stepA-*`, `stock-g2ebb907-*`, `video-reset-*`, `reboot-loop-*`).
+
+#### mediaserver heap corruption (NVIDIA OMX video)
+
+`mediaserver` aborts with `heap corruption detected by dlmalloc/dlfree/
+tmalloc_large`. It happens on both kernels, so it is not a kernel bug. The abort
+is only where the damage is *noticed* (`~OMXCodec`, `~MemoryDealer`,
+`OMX::allocateNode`, `MediaCodecList`, `AString`); the writer runs earlier.
+
+What reproduces it, in order of reliability:
+
+1. Ending a video recording (`OMX.Nvidia.h264.encoder` teardown).
+2. Ending playback in Gallery (`OMX.Nvidia.h264.decode` teardown).
+3. Video thumbnails (`StagefrightMetadataRetriever::getFrameAtTime`).
+4. SoundPool decodes (`MediaPlayerService::decode`) on an already damaged heap.
+
+Two fresh mediaservers can die within 5 s of each other after one recording.
+
+Ruled out, with evidence:
+
+- **FFmpeg extractor.** `libc.debug.malloc=10` blamed `libavutil`, but that is a
+  false positive: FFmpeg allocates with `posix_memalign`, which KitKat bionic
+  sends straight to `dlposix_memalign` and never tracks. With
+  `libFFmpegExtractor.so` renamed away the crash still happened (22:21, NV H.264
+  decoder teardown). FFmpeg was restored.
+- **UI sounds.** Disabling lock and touch sounds did not stop it.
+- **Malloc debug as a detector.** Level 10 guards change the heap layout and hide
+  the bug; a long camera and gallery session with it on had no crash.
+- **`OMXNodeInstance` copy overflow.** `patches/frameworks-av-omx-copy-bounds.patch`
+  bounds-checks `BufferMeta::CopyToOMX/CopyFromOMX` (CM's Qualcomm extradata
+  change copies `nAllocLen - nOffset` without checking `mMem->size()`). It never
+  fired, because without quirks `OMXCodec` uses `useBuffer` and those copies
+  are never reached.
+
+Current lead (**applied on the device, not yet validated**): the NVIDIA video
+components need to allocate their own buffers. LG's stock `media_codecs.xml`
+has no quirks because LG's NVIDIA-modified framework handled `OMX.Nvidia.*`
+itself; CM does not. Cpasjuste's CM 11 tree for the same SoC (Tegra 4i "ceres",
+Wiko Wax / Blackphone) declares `requires-allocate-on-input-ports` and
+`requires-allocate-on-output-ports` for them, and `configs/media_codecs.xml`
+now does the same. If recording, playback and thumbnails stop crashing, the
+encoder leak, mediaserver recycle and skip-thumbnail workarounds can probably
+be dropped. Check the encoder bitrate again at the same time.
+
+NVIDIA has not published source for `libnvomx`/`libnvmm*`. `libnvomx.so` only
+talks OpenMAX IL plus the five KitKat extensions (`enableAndroidNativeBuffers`,
+`useAndroidNativeBuffer`, `getAndroidNativeBufferUsage`,
+`storeMetaDataInBuffers`, `prependSPSPPSToIDRFrames`), so the interop boundary
+is `OMXNodeInstance` and the quirks `OMXCodec` applies.
+
+#### Abort deadlock (fixed)
+
+When `dlfree` found corruption it called `abort()` with the malloc lock held.
+`raise()` went through `pthread_kill()`, which takes `gThreadListLock`; a thread
+holding that lock while waiting for malloc deadlocked the process. mediaserver
+then hung forever instead of restarting. `Ringer.ring()`, `ToneGenerator` and
+the in-call UI blocked on audio binder calls, so **incoming calls rang on the
+caller's side but never showed on the phone**.
+`patches/bionic-raise-tgkill.patch` makes `raise()` call `tgkill()` directly
+(the upstream Lollipop fix). Validated: later corruptions killed mediaserver and
+it restarted in about a second.
+
+#### Incoming calls while asleep
+
+There are two separate causes:
+
+1. The mediaserver hang above (fixed by the bionic patch).
+2. The modem sometimes drops registration (`+CREG: 2` then `0`) while the AP is
+   in LP0, and the network never pages it. Claro then sends a "Te llamé" SMS.
+   In the test spot 2G RSSI was about 5 (-103 dBm, emergency only) and 3G was
+   marginal, so coverage is a likely factor. One outgoing call failed with
+   `+CEER: There was a mobility management failure`. Not yet compared with the
+   LG stock ROM in the same spot.
+
+The baseband wake path works on both kernels: the AP resumes on
+`WAKE59, tegra_bb0` and `RING` is delivered when the modem gets the page.
+
+#### Video bitrate
+
+`MPEG4Writer` asks for 4096 kbps (profile 480p is 2.5 Mbps video), but recorded
+files measure about 171 kbps of video. I-frames are about 2.6 KB at 720x480.
+`OMXCodec::setupBitRate` sets `OMX_Video_ControlRateVariable` and the component
+accepts it without error. Recheck with the allocate quirks; otherwise try CBR.
+
+#### Unexplained hardware reset
+
+One hard reset happened while recording video, with mediaserver malloc debug on
+(`pda.bootreason=coldboot`, `lge.bootreason=0xffffffff`). The phone came back
+in `chargerlogo` mode with the full framework running. It did not reproduce in
+later recordings with `/proc/kmsg` streamed to the host. `ram_console` is
+configured but its region is empty (`00000000-00000000 : ram_console`), so
+`/proc/last_kmsg` is unavailable. Reserving it is a pending kernel task.
 
 **Device**: LG G2 Mini LTE / LG-D625  
 **Codename**: g2mv  
@@ -373,6 +476,44 @@ device/lge/g2mv/extract-kernel.py boot.emmc.win
 
 The script refuses any kernel with a different SHA-256.
 
+### Kernel validation workflow
+
+The flashed `boot` partition keeps the **stock kernel** (`3.4.65-g2ebb907`) as
+the daily baseline. Source kernels are only tried in RAM, one commit at a time,
+until they pass the full hardware matrix:
+
+```bash
+adb reboot bootloader
+fastboot boot boot-<commit>.img   # a reboot falls back to the flashed stock kernel
+```
+
+- Commit every kernel change before building, so `uname -r` carries a clean
+  hash (no `-dirty`) and each image maps to exactly one commit.
+- The source kernel compares module vermagic with `strcmp`, and the vermagic
+  includes the git hash. `/system/lib/modules/bcmdhd.ko` must come from the same
+  build as the kernel under test, or Wi-Fi will not load. The stock kernel
+  accepts any vermagic. (Pending: ship `bcmdhd.ko` in each boot image's ramdisk.)
+- Any failure is A/B tested on the stock kernel before blaming the source
+  kernel. Today that ruled out the kernel for calls and mediaserver crashes.
+
+Source kernel status (`cm-11.0` branch):
+
+| Commit | Change | Status |
+|---|---|---|
+| `79897f0` | Panel timings, RT8542 backlight, `apds993x` ALS | Boots (screen ready in 12.8 s); Wi-Fi, SIM, sensors OK. Proximity regressed |
+| `8e1429c` | `apds993x` stock PS tuning (16 pulses, 50 mA, gain 2x) | Calls blank the screen (ear ~990-1023, far ~110-160, thresholds 900/800) |
+| `wip/rt8542-flash-fix` | Do not fire the strobe GPIO on every enable (PMIC brown-out) | Not yet tested; needs a rebase on `8e1429c` |
+
+Next kernel step after the flash fix: KnockON / double-tap-to-wake. The
+`atmel_s336` LPWG code only emits a `TOUCH_GESTURE_WAKEUP` uevent for LG's
+framework. It needs a `KEY_POWER` report and a CMHW `TapToWake` class.
+
+When the image is built in the Docker Desktop container, the VM file share can
+serve stale inodes after a host-side `git commit`. The container then sees the
+old ref and index and stamps the kernel `-<old hash>-dirty`. Resync from inside
+the container (`git update-ref` + `git reset -q`) and check `vermagic` before
+using the image.
+
 ## Partitions
 
 The recovery uses the Tegra by-name paths exposed by the stock kernel:
@@ -416,4 +557,27 @@ make -j$(nproc) bacon
 
 For TWRP recovery builds and the twrpTar fork patch, use the dedicated
 `twrp-4.4/device/lge/g2mv` tree instead of this CM 11 device tree.
+
+### Patches outside this tree
+
+Changes to LineageOS projects live in `patches/` and must be applied before
+building:
+
+| Patch | Apply in | Purpose |
+|---|---|---|
+| `init-chargerlogo.patch` | `system/core` | `androidboot.mode=chargerlogo` offline charging |
+| `libnfc-nci-reset-ntf-version.patch` | `external/libnfc-nci` | PN547 CORE_RESET_NTF recovery |
+| `bionic-raise-tgkill.patch` | `bionic` | `raise()` uses `tgkill`; fixes the abort deadlock that hung mediaserver |
+| `frameworks-av-nv-camera-encoder-workarounds.patch` | `frameworks/av` | Camera YUV path, NV encoder leak, mediaserver recycle |
+| `frameworks-av-omx-copy-bounds.patch` | `frameworks/av` | Bounds checks and logging on OMX buffer copies (diagnostic hardening) |
+| `camera2-nv-video-workarounds.patch` | `packages/apps/Camera2` | EIS off, skip video thumbnails, 480p default |
+
+```bash
+patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
+patch -p1 -d external/libnfc-nci < device/lge/g2mv/patches/libnfc-nci-reset-ntf-version.patch
+git -C bionic am ../device/lge/g2mv/patches/bionic-raise-tgkill.patch
+git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-nv-camera-encoder-workarounds.patch
+git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-omx-copy-bounds.patch
+git -C packages/apps/Camera2 apply ../../../device/lge/g2mv/patches/camera2-nv-video-workarounds.patch
+```
 
