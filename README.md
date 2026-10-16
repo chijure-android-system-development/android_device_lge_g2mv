@@ -68,7 +68,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
 | Cellular / SIM | Works, calls unreliable while asleep | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA. Calls work while awake; incoming calls while the AP is in LP0 can be missed (see [Known issues](#known-issues-2026-10-15)) |
 | Camera / Video | Partial | Stills OK. Video records but the NV AVC encoder outputs ~171 kbps instead of the requested 4 Mbps (heavily pixelated). NVIDIA OMX video teardown still corrupts the mediaserver heap (see [Known issues](#known-issues-2026-10-15)). Workarounds: YUV path (`persist.camera.disable_meta`), EIS off, skip thumbs, NV encoder leak + mediaserver recycle |
-| Flash / Torch | Works (stock kernel) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel strobe brown-out fix is on kernel branch `wip/rt8542-flash-fix`, not yet validated |
+| Flash / Torch | Works (stock kernel) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel strobe brown-out fix is commit `4ed1762`, not yet validated |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Partial | PN547 polls; CORE_RESET_NTF after discovery recovered (skip NCI version check on NTF + `libnfc-nxp.conf` FW/standby). Tag read still needs a field test. `com.android.nfc` aborts in `applyRouting` (`libnfc_nci_jni`) on screen on/off |
 | Bluetooth (BCM4334) | Works | BlueDroid + `libbt-vendor`; UART `ttyHS2`; FW patch loads; scan + classic bond OK (`LPM_SLEEP_MODE=FALSE` in `vnd_g2mv.txt`) |
@@ -536,8 +536,8 @@ Source kernel status (`cm-11.0` branch):
 |---|---|---|
 | `79897f0` | Panel timings, RT8542 backlight, `apds993x` ALS | Boots (screen ready in 12.8 s); Wi-Fi, SIM, sensors OK. Proximity regressed |
 | `8e1429c` | `apds993x` stock PS tuning (16 pulses, 50 mA, gain 2x) | Calls blank the screen (ear ~990-1023, far ~110-160, thresholds 900/800) |
-| `wip/rt8542-flash-fix` | Do not fire the strobe GPIO on every enable (PMIC brown-out) | Not yet tested; needs a rebase on `8e1429c` |
 | `0b46c6a`..`6945ca8` | KnockON wake key, apds993x real initial PS state, re-arm after a declined wake | Validated: toggle, pocket, re-arm, wake from LP0, in-call proximity (first event at 40 ms, screen off ~200 ms after near) |
+| `4ed1762` | RT8542: do not fire the strobe GPIO on every enable (PMIC brown-out), 16 flash/torch levels | **Not yet validated** on-device with the source kernel (step C) |
 
 
 When the image is built in the Docker Desktop container, the VM file share can
