@@ -1,0 +1,56 @@
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index b1284b7f..760273aa 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -52,7 +52,7 @@
+         <!-- The integer value of CamcorderProfile.QUALITY_WQVGA -->
+         <item>11</item>
+         <!-- The integer value of CamcorderProfile.QUALITY_CIF -->
+-        <item>@string/pref_video_quality_default</item>
++        <item>3</item>
+         <!-- The integer value of CamcorderProfile.QUALITY_QVGA -->
+         <item>7</item>
+         <!-- The integer value of CamcorderProfile.QUALITY_QCIF -->
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index caa0e75e..a349549e 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -232,7 +232,7 @@
+     <!-- The Video quality settings in preference [CHAR LIMIT=21] -->
+     <string name="pref_video_quality_title">Video quality</string>
+     <!-- The default quality value is 3 (CIF) -->
+-    <string name="pref_video_quality_default" translatable="false">3</string>
++    <string name="pref_video_quality_default" translatable="false">6</string>
+     <!-- Video quality setting entry.
+     Videos will be recorded in 4k DCI quality. [CHAR LIMIT=24] -->
+     <string name="pref_video_quality_entry_4kdci" translatable="false">
+diff --git a/src/com/android/camera/VideoModule.java b/src/com/android/camera/VideoModule.java
+index 72e5b32d..8aada808 100644
+--- a/src/com/android/camera/VideoModule.java
++++ b/src/com/android/camera/VideoModule.java
+@@ -793,7 +793,8 @@ public class VideoModule implements CameraModule,
+              mParameters = mCameraDevice.getParameters();
+             String defaultQuality = mActivity.getResources().getString(
+                     R.string.pref_video_quality_default);
+-            boolean hasProfile = CamcorderProfile.hasProfile(
++            // g2mv: check the open camera; the front one has no 1080p profile.
++            boolean hasProfile = CamcorderProfile.hasProfile(mCameraId,
+                      Integer.parseInt(defaultQuality));
+             if (hasProfile == true){
+                 videoQuality = defaultQuality;
+@@ -836,6 +837,15 @@ public class VideoModule implements CameraModule,
+         mCaptureTimeLapse = (mTimeBetweenTimeLapseFrameCaptureMs != 0);
+         // TODO: This should be checked instead directly +1000.
+         if (mCaptureTimeLapse) quality += 1000;
++        if (!CamcorderProfile.hasProfile(mCameraId, quality)) {
++            // g2mv: a quality saved for another camera (e.g. 1080p) would make
++            // CamcorderProfile.get throw; use this camera's highest instead.
++            int fallback = Integer.parseInt(CameraSettings.getSupportedHighestVideoQuality(
++                    mCameraId, videoQuality, mCameraDevice.getParameters()));
++            Log.w(TAG, "No profile " + quality + " for camera " + mCameraId
++                    + ", using " + fallback);
++            quality = mCaptureTimeLapse ? fallback + 1000 : fallback;
++        }
+         mProfile = CamcorderProfile.get(mCameraId, quality);
+         getDesiredPreviewSize();
+         qcomReadVideoPreferences();

@@ -67,7 +67,7 @@ the stock and source kernels. From 2026-10-15 every result names its kernel; see
 | Wi-Fi | Works | Source kernel + matching `bcmdhd.ko`; `insmod` on boot |
 | Auto-brightness / ALS | Works | APDS9930 `TYPE_LIGHT` + framework overlay curves |
 | Cellular / SIM | Works, calls unreliable while asleep | Icera `productConfig`/`deviceConfig`; Claro PE on HSPA. Calls work while awake; incoming calls while the AP is in LP0 can be missed (see [Known issues](#known-issues-2026-10-15)) |
-| Camera / Video | Partial | Stills, flash and recording work. Recording works at stock quality since `enctune.conf` was added: 1080p at 17 Mbps (default) and 720p at 12 Mbps on the back camera. mediaserver heap corruption traced to CM's CVE-2017-13154 `freeNode` use-after-free; fix installed, validation pending (see [Known issues](#known-issues-2026-10-15)) |
+| Camera / Video | Works | Stills, flash, front and back recording: 1080p at 17 Mbps (default, EIS on) and 720p at 12 Mbps, Gallery thumbnails and hardware playback. The mediaserver crashes were CM's CVE-2017-13154 `freeNode` use-after-free; fixed, and every camera workaround removed (see [Known issues](#known-issues-2026-10-15)) |
 | Flash / Torch | Works (stock and source kernel `a205a37`) | `RT8542-fled` + Torch overlay (127 = torch, 255 = strobe); sysfs `chmod 0666`. Source kernel: torch, photo flash and video torch validated, no resets; LED switches off when the camera closes |
 | Vibrator | Works | max77660 haptic via `BOARD_HAS_VIBRATOR_IMPLEMENTATION` |
 | NFC | Works | PN547 polls with the crystal clock config (see [NFC: PN547 reset on RF start](#nfc-pn547-reset-on-rf-start-fixed)); no more `applyRouting` watchdog aborts. Android Beam from a stock D625 works (photo, NFC handover to Bluetooth). Tag reading not tested yet (no tag at hand) |
@@ -304,7 +304,7 @@ tmalloc_large`, on both kernels. The abort site is only where the damage is
 `MediaCodecList`, `AString`, `~CallbackDispatcher`). In every case it is the
 first heap operation after an OMX node is destroyed.
 
-**Root cause, fix pending device validation (2026-10-16):** CM 11's backport of
+**Root cause (fixed and validated 2026-10-16):** CM 11's backport of
 CVE-2017-13154 (`frameworks/av` commit `9745c8f66`, "use a lock around
 OMX::freeNode") puts a function-scope `Mutex::Autolock _l(mLock)` in
 `OMXNodeInstance::freeNode`. KitKat's `freeNode` ends in `delete this`, so the
@@ -324,11 +324,30 @@ aborts. This is a CM bug, not an NVIDIA one:
 
 Fix in `patches/frameworks-av-omx-node-instance.patch`: keep the lock around
 `destroyComponentInstance()` (what the CVE needs), but end its scope before
-`delete this`. It is installed on the device; the recording, playback and
-sound test is pending. Once that test passes, drop the workarounds that only
-masked this bug: NV encoder freeNode skip + `MemoryDealer` leak, mediaserver
-recycle in `CameraService`, `persist.camera.skip_video_thumb`, and the
-thumbnail NV skips below. (The bitrate problem was a separate cause, the missing `enctune.conf`; see Video bitrate.)
+`delete this`.
+
+With the fix in place, every workaround that only masked this bug was
+removed:
+
+- the `freeNode` skip and `MemoryDealer` leak for `OMX.Nvidia.h264.encoder`;
+- the mediaserver recycle in `CameraService` (`nv_encoder_dirty`);
+- the software-only thumbnail decoders and the skipped NVIDIA color-format
+  probe;
+- `persist.camera.skip_video_thumb` (`ThumbnailUtils`, `MediaProvider`,
+  Camera2);
+- `persist.camera.disable_meta` (forced YUV path in `StagefrightRecorder`);
+- EIS off and flash off by default in Camera2.
+
+Validated 2026-10-16 on stock kernel `g2ebb907`, and one mediaserver process
+(the same PID) survived all of it:
+
+- 3 front-camera 720p record/close/reopen cycles;
+- 2 back-camera 1080p cycles with EIS on (16.4 and 17.7 Mbps);
+- Gallery thumbnails for every video;
+- 1080p playback on `OMX.Nvidia.h264.decode`.
+
+The bitrate problem had a separate cause, the missing `enctune.conf` (see
+Video bitrate).
 
 Found by elimination. Each of these was ruled out on the device first:
 
@@ -341,12 +360,8 @@ Found by elimination. Each of these was ruled out on the device first:
 | Blob ABI mismatch (audio/camera/OMX structs, vtables) | Audited against LG's 4.4.2 framework libs: compatible. Only `libaudioavp` → `IMediaPlayerService` vtable slot 19 (NVIDIA-added; lands on CM's `updateProxyConfig`) differs, and only on ULP/offload paths this tree does not enable |
 | `persist.camera.disable_meta=0` (metadata buffers) | Crashes unchanged; video still pixelated |
 
-Changes kept from the hunt (all in the two `frameworks-av-*` patches):
+Changes kept from the hunt (in `frameworks-av-omx-node-instance.patch`):
 
-- `OMXCodec::Create` skips `OMX.Nvidia.*` decoders for
-  `kClientNeedsFramebuffer`, so thumbnails use software.
-  `StagefrightMetadataRetriever::isYUV420PlanarSupported` no longer
-  instantiates the NVIDIA decoder just to read its color formats.
 - `OMX::allocateNode` logs failures with `ALOGW` and the error code (was
   `ALOGV`).
 - The `onMessage` late-callback guard and the copy bounds checks stay as
@@ -806,7 +821,12 @@ up once before installing any ROM:
 
 ## Build (CM 11)
 
+From the top of the CM 11 tree, apply the source patches first (see
+[Changes to the CM 11 source tree](#changes-to-the-cm-11-source-tree)), then
+build:
+
 ```bash
+device/lge/g2mv/patches/apply-patches.sh
 source build/envsetup.sh
 lunch cm_g2mv-userdebug
 make -j$(nproc) bacon
@@ -815,28 +835,63 @@ make -j$(nproc) bacon
 For TWRP recovery builds and the twrpTar fork patch, use the dedicated
 `twrp-4.4/device/lge/g2mv` tree instead of this CM 11 device tree.
 
-### Patches outside this tree
+## Changes to the CM 11 source tree
 
-Changes to LineageOS projects live in `patches/` and must be applied before
-building:
+Everything this port needs on top of a stock CyanogenMod 11 checkout. There
+are three kinds of change:
 
-| Patch | Apply in | Purpose |
+1. **Own repositories**: kernel, device tree and vendor blobs, kept as git
+   repos on GitHub (branch `cm-11.0`).
+2. **Patches to LineageOS/CyanogenMod projects**: these repos cannot be
+   pushed, so the changes are kept in `patches/`.
+   `patches/apply-patches.sh` applies them and skips the ones already
+   applied.
+3. **Configuration and blob fixes** inside the device and vendor trees: files
+   missing from the stock dump, LG-only settings that the AOSP stacks do not
+   read, and one binary-patched HAL.
+
+### Own repositories
+
+| Path | Repository | Content |
 |---|---|---|
-| `init-chargerlogo.patch` | `system/core` | `androidboot.mode=chargerlogo` offline charging |
-| `libnfc-nci-reset-recovery.patch` | `external/libnfc-nci` | Recovery from a NFCC CORE_RESET_NTF: no NCI version check on the NTF, restart RF discovery afterwards (at most 3 times in 30 s) |
-| `bionic-raise-tgkill.patch` | `bionic` | `raise()` uses `tgkill`; fixes the abort deadlock that hung mediaserver |
-| `frameworks-av-nv-camera-encoder-workarounds.patch` | `frameworks/av` | Camera YUV path switch, NV encoder leak, mediaserver recycle, software decoders for thumbnails, no NVIDIA color-format probe |
-| `frameworks-av-omx-node-instance.patch` | `frameworks/av` | **`freeNode` use-after-free fix** (CVE-2017-13154 lock scope), late-callback guard, OMX copy bounds, `allocateNode` failure logging |
-| `camera2-nv-video-workarounds.patch` | `packages/apps/Camera2` | EIS off, skip video thumbnails, 1080p default, per-camera profile check |
-| `lockclock-bound-gps-weather-location.patch` | `packages/apps/LockClock` | Weather location via GPS (no network provider without Google): 60 s timeout, at most once per hour |
+| `kernel/lge/d625` | `android_kernel_lge_d625` | LG 3.4 kernel: panel/backlight/ALS, APDS9930 stock proximity tuning, KnockON (Atmel S336 LPWG to `KEY_WAKEUP`, re-arm), RT8542 flash/torch sequencing, MAX17048 live `voltage_now`. Daily builds run the stock kernel `3.4.65-g2ebb907`; source kernels are only tried with `fastboot boot` (see [Kernel validation workflow](#kernel-validation-workflow)) |
+| `device/lge/g2mv` | `android_device_lge_g2mv` | This tree |
+| `vendor/lge/g2mv` | `android_vendor_lge_g2mv` | Blobs from stock D62510c (`proprietary-files.txt`), plus the NVIDIA power stack libs, `enctune.conf` and `gpsconfig.xml` with SUPL TLS off |
 
-```bash
-patch -p1 -d system/core < device/lge/g2mv/patches/init-chargerlogo.patch
-patch -p1 -d external/libnfc-nci < device/lge/g2mv/patches/libnfc-nci-reset-recovery.patch
-git -C bionic am ../device/lge/g2mv/patches/bionic-raise-tgkill.patch
-git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-nv-camera-encoder-workarounds.patch
-git -C frameworks/av apply ../../device/lge/g2mv/patches/frameworks-av-omx-node-instance.patch
-git -C packages/apps/Camera2 apply ../../../device/lge/g2mv/patches/camera2-nv-video-workarounds.patch
-git -C packages/apps/LockClock apply ../../../device/lge/g2mv/patches/lockclock-bound-gps-weather-location.patch
-```
+### Patches to CyanogenMod projects
 
+| Patch | Project | Problem | Fix | Validated |
+|---|---|---|---|---|
+| `bionic-raise-tgkill.patch` | `bionic` | An `abort()` with the malloc lock held deadlocked in `raise()` → `pthread_kill()`, so a crashed mediaserver hung instead of dying, and incoming calls were missed | `raise()` calls `tgkill(getpid(), gettid(), sig)` directly | Abort now kills mediaserver; calls ring |
+| `frameworks-av-omx-node-instance.patch` | `frameworks/av` | Random mediaserver heap corruption after any OMX node was freed: CM's CVE-2017-13154 backport unlocks `mLock` after `delete this` (use-after-free) | Lock scoped to `destroyComponentInstance()`; also late-callback guard, copy bounds, `allocateNode` failure logging | Record/close/reopen cycles, thumbnails, HW playback on one mediaserver PID |
+| `init-chargerlogo.patch` | `system/core` | LG sets `androidboot.mode=chargerlogo`; AOSP init only knows `charger`, so the full framework booted when charging powered off | Run `/sbin/chargerlogo` before early-boot in that mode | Offline charge screen shows |
+| `libnfc-nci-reset-recovery.patch` | `external/libnfc-nci` | After a `CORE_RESET_NTF`, the NCI version check failed on the NTF and RF discovery was never restarted (NULL discovery callback), so `applyRouting` hung until the NfcService watchdog killed `com.android.nfc` | No version check on the NTF; restart discovery 300 ms after recovery, at most 3 times in 30 s | Lock/unlock cycles, Android Beam |
+| `camera2-video-quality-defaults.patch` | `packages/apps/Camera2` | 480p default; the CIF list entry reused the default value; the front camera crashed with 1080p because `hasProfile()` only checked the back camera | 1080p default, CIF = 3, profile checked against the open camera with fallback to its highest quality | Back 1080p, front 720p |
+| `lockclock-bound-gps-weather-location.patch` | `packages/apps/LockClock` | Without Google Play services the weather's coarse location fell back to GPS, which stayed on 5 minutes on every boot and data reconnect (no LP0) | GPS requests limited to 60 s and once per hour | 60 s session, none on the next reconnect |
+
+Removed after the `freeNode` fix: `frameworks-av-nv-camera-encoder-workarounds.patch`,
+the `skip_video_thumb` checks in `frameworks/base` and
+`packages/providers/MediaProvider`, and the EIS-off and flash-off defaults
+in Camera2.
+
+### Configuration and blob fixes
+
+| Area | Change | Why |
+|---|---|---|
+| Video encoder | `vendor/.../etc/enctune.conf` | Missing from the stock dump. Without it `libnvomx` ignores the bitrate and encodes at a high fixed QP (0.23 Mbps instead of 4 Mbps) |
+| Camcorder | `configs/media_profiles.xml` with stock profiles; H.264 cap 1920x1080 at 17 Mbps | Earlier 720x480 cap |
+| NFC | `configs/libnfc-nxp.conf` = stock, with `NXP_CORE_CONF_EXTN` holding the XTAL block | The AOSP pn54x HAL applied LG's PLL 19.2 MHz block; the crystal-clocked PN547 then reset on every RF start |
+| GPS | `gpsconfig.xml` `SuplTlsEnable="false"`; `gps.conf` NTP server; `ttyHS1` and `gpio63` permissions | `gps.conf` points at plain-text SUPL port 7276; `LGE_TLS_MODE=0` is only read by LG's framework |
+| Proximity | `prebuilt/sensors.g2mv.so`: one `strb` at file offset `0x3078` replaced by `nop` | The stock HAL injected a hard-coded "far" (5.0) event on enable, which broke in-call and pocket checks |
+| KnockON | `keyhandler/`, `keylayout/atmel_s336.kl` (scancode 143 unmapped), `cmhw/` TapToWake, `config_proximityCheckOnWake` | Wake through a proximity-checked key handler instead of `KEY_POWER` |
+| IR blaster | `consumerir/` HAL + `prebuilt/uei/lib/libcir_driver.so` (LG G3 blob), `android.hardware.consumerir.xml`; stock Quick Remote stack in `prebuilt/uei/` | Standard ConsumerIr support for any remote app; Quick Remote kept as an alternative |
+| Permissions | `handheld_core_hardware.xml`, `android.hardware.camera.flash-autofocus.xml` | Missing: phone features and flash/autofocus were not declared |
+| Power | NVIDIA `ussrd`/`powerservice` + `power.g2mv.rc`; interactive governor re-applied at `sys.boot_completed` | CPU/GPU scaling as on stock |
+| Telephony | `telephony.lteOnGsmDevice=1` | Settings offers 4G modes |
+| Bluetooth | BlueDroid LPM off | LGE `bluedroid_pm` wake is not wired |
+| Torch | Overlay levels 127 (torch) and 255 (strobe) | The only RT8542 levels the driver accepts |
+| Audio | `audio_policy.tegra.so` deleted from `out/` on every build | ABI-incompatible with CM 11; it crashed mediaserver |
+| Memory | Stock Dalvik heap props for 1 GB RAM | Matches stock |
+
+Known dead ends are listed in [Known issues](#known-issues-2026-10-15) with
+their results, so they are not retried.
